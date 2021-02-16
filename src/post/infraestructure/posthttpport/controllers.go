@@ -2,7 +2,6 @@ package posthttpport
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/alejogs4/blog/src/post/application"
@@ -71,7 +70,7 @@ func getPostByIDController(response http.ResponseWriter, request *http.Request) 
 	response.Header().Set("Content-Type", "application/json")
 	postID := mux.Vars(request)["id"]
 	post, err := postQueries.GetPostByID(postID)
-	fmt.Println(postID)
+
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)
 		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
