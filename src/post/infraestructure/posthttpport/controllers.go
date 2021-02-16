@@ -10,6 +10,7 @@ import (
 	"github.com/alejogs4/blog/src/post/infraestructure/posthttpadapter"
 	"github.com/alejogs4/blog/src/post/infraestructure/postrepository"
 	"github.com/alejogs4/blog/src/shared/infraestructure/httputils"
+	"github.com/gorilla/mux"
 )
 
 var postCommands application.PostCommands = application.NewPostCommands(postrepository.PostgresRepository{})
@@ -56,7 +57,7 @@ func addPostLikeController(response http.ResponseWriter, request *http.Request) 
 	}
 
 	err = postCommands.AddLike(likeInfo.UserID, likeInfo.PostID, likeInfo.Type)
-	fmt.Println(err)
+
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)
 		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
@@ -64,6 +65,20 @@ func addPostLikeController(response http.ResponseWriter, request *http.Request) 
 	}
 
 	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(map[string]string{}, "Ok"), http.StatusCreated)
+}
+
+func getPostByIDController(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	postID := mux.Vars(request)["id"]
+	post, err := postQueries.GetPostByID(postID)
+	fmt.Println(postID)
+	if err != nil {
+		httpError := posthttpadapter.MapPostErrorToHttpError(err)
+		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
+		return
+	}
+
+	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(post, "Ok"), http.StatusOK)
 }
 
 func getAllPostController(response http.ResponseWriter, request *http.Request) {

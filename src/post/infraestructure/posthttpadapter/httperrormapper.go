@@ -50,5 +50,9 @@ func MapPostErrorToHttpError(err error) httputils.HttpError {
 		return httputils.HttpError{Status: http.StatusBadRequest, Message: like.ErrInvalidLikeState.Error()}
 	}
 
+	if errors.Is(err, post.ErrNoFoundPost) {
+		return httputils.HttpError{Status: http.StatusNotFound, Message: post.ErrNoFoundPost.Error()}
+	}
+
 	return httputils.HttpError{Status: http.StatusInternalServerError, Message: "Something went wrong"}
 }

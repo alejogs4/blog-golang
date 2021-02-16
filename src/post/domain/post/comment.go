@@ -12,11 +12,11 @@ const (
 
 // Comment .
 type Comment struct {
-	ID      string
-	PostID  string
-	UserID  string
-	Content string
-	State   string // TODO: this should be a value object
+	ID      string `json:"id"`
+	PostID  string `json:"post_id"`
+	UserID  string `json:"user_id"`
+	Content string `json:"content"`
+	State   string `json:"state"` // TODO: this should be a value object
 }
 
 // CreateNewComment factory function which create a new comment returning error if data is incorrect

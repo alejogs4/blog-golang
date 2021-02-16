@@ -1,9 +1,10 @@
 package posthttpport
 
-import "net/http"
+import "github.com/gorilla/mux"
 
-func HandlePostHttpRoutes(router *http.ServeMux) {
+func HandlePostHttpRoutes(router *mux.Router) {
 	router.HandleFunc("/api/v1/post", createPostController)
+	router.HandleFunc("/api/v1/post/{id}", getPostByIDController)
 	router.HandleFunc("/api/v1/posts", getAllPostController)
 	router.HandleFunc("/api/v1/post/like", addPostLikeController)
 }

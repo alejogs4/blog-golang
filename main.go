@@ -7,6 +7,7 @@ import (
 	"github.com/alejogs4/blog/src/post/infraestructure/posthttpport"
 	"github.com/alejogs4/blog/src/shared/infraestructure/database"
 	userhttpport "github.com/alejogs4/blog/src/user/infraestructure/userHttpPort"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
@@ -17,7 +18,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	router := http.NewServeMux()
+	router := mux.NewRouter()
 	posthttpport.HandlePostHttpRoutes(router)
 	userhttpport.HandleUserRoutes(router)
 

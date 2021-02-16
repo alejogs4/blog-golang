@@ -2,11 +2,11 @@ package like
 
 // Like is all the information alongside a like
 type Like struct {
-	ID     string
-	PostID string
-	UserID string
-	Type   Type
-	State  State
+	ID     string `json:"id"`
+	PostID string `json:"post_id"`
+	UserID string `json:"user_id"`
+	Type   Type   `json:"type"`
+	State  State  `json:"state"`
 }
 
 // CreateNewLike factory function to create a right like

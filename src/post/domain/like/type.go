@@ -11,7 +11,7 @@ const (
 
 // Type value object to represent if it's like or dislike
 type Type struct {
-	Value string
+	Value string `json:"value"`
 }
 
 // CreateNewLikeType factory function to create a valid like type

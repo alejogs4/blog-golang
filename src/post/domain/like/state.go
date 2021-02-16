@@ -11,7 +11,7 @@ const (
 
 // State value object that represent current like state
 type State struct {
-	Value string
+	Value string `json:"value"`
 }
 
 // CreateNewLikeState factory function to create a right like state

@@ -1,8 +1,8 @@
 package userhttpport
 
-import "net/http"
+import "github.com/gorilla/mux"
 
-func HandleUserRoutes(router *http.ServeMux) {
+func HandleUserRoutes(router *mux.Router) {
 	router.HandleFunc("/api/v1/login", loginHandler)
 	router.HandleFunc("/api/v1/register", registerHandler)
 }
