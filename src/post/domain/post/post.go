@@ -9,8 +9,8 @@ type Post struct {
 	Content  string      `json:"content"`
 	Picture  string      `json:"picture"`
 	Tags     []Tag       `json:"tags"`
-	Comments []Comment   `json:"comments,omitempty"`
-	Likes    []like.Like `json:"likes,omitempty"`
+	Comments []Comment   `json:"comments"`
+	Likes    []like.Like `json:"likes"`
 }
 
 // CreateNewPost will verify that right data was provided and return a new instance of the post if so

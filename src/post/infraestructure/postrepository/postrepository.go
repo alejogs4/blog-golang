@@ -1,8 +1,6 @@
 package postrepository
 
 import (
-	"fmt"
-
 	"github.com/alejogs4/blog/src/post/domain/like"
 	"github.com/alejogs4/blog/src/post/domain/post"
 	"github.com/alejogs4/blog/src/shared/infraestructure/database"
@@ -83,12 +81,7 @@ func (postgres PostgresRepository) GetAllPosts() ([]post.Post, error) {
 	// TODO: Optimize this query
 	var posts []post.Post = []post.Post{}
 	result, err := database.PostgresDB.Query(`
-		SELECT p.id, p.person_id, p.title, p.content, p.picture, c.id, c.content, c.person_id, c.post_id, c.state, t.id, t.content, l.id, l.post_id, l.person_id, l.state, l.type
-		FROM post AS p
-		LEFT JOIN comment AS c ON c.post_id = p.id
-		LEFT JOIN post_tag AS pt ON pt.post_id = p.id
-		LEFT JOIN tag AS t ON t.id = pt.tag_id
-		LEFT JOIN post_like AS l ON l.post_id = p.id
+		SELECT p.id, p.person_id, p.title, p.content, p.picture FROM post AS p
 	`)
 	defer result.Close()
 
@@ -98,9 +91,6 @@ func (postgres PostgresRepository) GetAllPosts() ([]post.Post, error) {
 
 	for result.Next() {
 		var newPost post.Post
-		var comment post.Comment
-		var tag post.Tag
-		var like like.Like
 
 		err := result.Scan(
 			&newPost.ID,
@@ -108,26 +98,13 @@ func (postgres PostgresRepository) GetAllPosts() ([]post.Post, error) {
 			&newPost.Title,
 			&newPost.Content,
 			&newPost.Picture,
-			&comment.ID,
-			&comment.Content,
-			&comment.UserID,
-			&comment.PostID,
-			&comment.State,
-			&tag.ID,
-			&tag.Content,
-			&like.ID,
-			&like.PostID,
-			&like.UserID,
-			&like.State.Value,
-			&like.Type.Value,
 		)
-		fmt.Println(err)
 		if err != nil {
 			return posts, err
 		}
-		newPost.Comments = append(newPost.Comments, comment)
-		newPost.Tags = append(newPost.Tags, tag)
-		newPost.Likes = append(newPost.Likes, like)
+		newPost.Comments = []post.Comment{}
+		newPost.Tags = []post.Tag{}
+		newPost.Likes = []like.Like{}
 
 		posts = append(posts, newPost)
 	}
