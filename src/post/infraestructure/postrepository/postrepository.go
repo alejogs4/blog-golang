@@ -1,6 +1,9 @@
 package postrepository
 
 import (
+	"database/sql"
+	"errors"
+
 	"github.com/alejogs4/blog/src/post/domain/like"
 	"github.com/alejogs4/blog/src/post/domain/post"
 	"github.com/alejogs4/blog/src/shared/infraestructure/database"
@@ -67,7 +70,7 @@ func (postgres PostgresRepository) RemoveComment(comment post.Comment) error {
 func (postgres PostgresRepository) GetPostCommentByID(id string) (post.Comment, error) {
 	var comment post.Comment
 
-	result := database.PostgresDB.QueryRow("SELECT id, content, person_id, post_id, state FROM comment WHERE post_id=$1", id)
+	result := database.PostgresDB.QueryRow("SELECT id, content, person_id, post_id, state FROM comment WHERE id=$1", id)
 	err := result.Scan(&comment.ID, &comment.Content, &comment.UserID, &comment.PostID, &comment.State)
 
 	if err != nil {
@@ -77,20 +80,28 @@ func (postgres PostgresRepository) GetPostCommentByID(id string) (post.Comment, 
 	return comment, nil
 }
 
-func (postgres PostgresRepository) GetAllPosts() ([]post.Post, error) {
+func (postgres PostgresRepository) GetAllPosts() ([]post.PostsDTO, error) {
 	// TODO: Optimize this query
-	var posts []post.Post = []post.Post{}
+	var posts []post.PostsDTO = []post.PostsDTO{}
 	result, err := database.PostgresDB.Query(`
-		SELECT p.id, p.person_id, p.title, p.content, p.picture FROM post AS p
-	`)
-	defer result.Close()
+		SELECT
+		p.id, p.person_id, p.title, p.content, p.picture,
+		(SELECT COUNT(l.id) FROM post_like AS l WHERE l.post_id=p.id AND state=$1 AND type=$2) as likes,
+		(SELECT COUNT(l.id) FROM post_like AS l WHERE l.post_id=p.id AND state=$1 AND type=$3) as dislikes,
+		(SELECT COUNT(c.id) FROM comment AS c WHERE c.post_id=p.id AND state=$4) as comments_count
+		FROM post AS p
+	`, like.Active, like.TLike, like.Dislike, post.ActiveComment)
 
 	if err != nil {
-		return posts, err
+		return nil, err
 	}
+	defer result.Close()
 
 	for result.Next() {
 		var newPost post.Post
+		var likes int = 0
+		var dislikes int = 0
+		var comments int = 0
 
 		err := result.Scan(
 			&newPost.ID,
@@ -98,15 +109,15 @@ func (postgres PostgresRepository) GetAllPosts() ([]post.Post, error) {
 			&newPost.Title,
 			&newPost.Content,
 			&newPost.Picture,
+			&likes,
+			&dislikes,
+			&comments,
 		)
 		if err != nil {
-			return posts, err
+			return nil, err
 		}
-		newPost.Comments = []post.Comment{}
-		newPost.Tags = []post.Tag{}
-		newPost.Likes = []like.Like{}
 
-		posts = append(posts, newPost)
+		posts = append(posts, post.ToPostsDTO(newPost, likes, dislikes, comments))
 	}
 
 	return posts, nil
@@ -138,6 +149,87 @@ func (postgres PostgresRepository) GetPostLikes(postID string) ([]like.Like, err
 	return likes, nil
 }
 
+func (postgres PostgresRepository) getPostTags(postID string) ([]post.Tag, error) {
+	var tags []post.Tag = []post.Tag{}
+	rows, err := database.PostgresDB.Query(
+		"SELECT t.id, t.content FROM tag t INNER JOIN post_tag pt ON pt.tag_id = t.id WHERE pt.post_id=$1", postID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var tag post.Tag
+
+		err := rows.Scan(&tag.ID, &tag.Content)
+		if err != nil {
+			return nil, err
+		}
+
+		tags = append(tags, tag)
+	}
+
+	return tags, nil
+}
+
+func (postgres PostgresRepository) getPostComments(postID string) ([]post.Comment, error) {
+	var comments []post.Comment = []post.Comment{}
+
+	rows, err := database.PostgresDB.Query(
+		"SELECT id, content, person_id, post_id, state FROM comment c WHERE post_id=$1", postID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var comment post.Comment
+
+		err := rows.Scan(&comment.ID, &comment.Content, &comment.UserID, &comment.PostID, &comment.State)
+		if err != nil {
+			return nil, err
+		}
+
+		comments = append(comments, comment)
+	}
+
+	return comments, nil
+}
+
 func (postgres PostgresRepository) GetPostByID(postID string) (post.Post, error) {
-	return post.Post{}, nil
+	var returnedPost post.Post
+	result := database.PostgresDB.QueryRow(
+		"SELECT id, person_id, title, content, picture FROM post WHERE id=$1", postID,
+	)
+
+	err := result.Scan(&returnedPost.ID, &returnedPost.UserID, &returnedPost.Title, &returnedPost.Content, &returnedPost.Picture)
+	if errors.Is(err, sql.ErrNoRows) {
+		return returnedPost, post.ErrNoFoundPost
+	}
+
+	if err != nil {
+		return returnedPost, err
+	}
+
+	comments, err := postgres.getPostComments(returnedPost.ID)
+	if err != nil {
+		return returnedPost, err
+	}
+
+	likes, err := postgres.GetPostLikes(returnedPost.ID)
+	if err != nil {
+		return returnedPost, err
+	}
+
+	tags, err := postgres.getPostTags(returnedPost.ID)
+	if err != nil {
+		return returnedPost, err
+	}
+
+	returnedPost.Comments = comments
+	returnedPost.Likes = likes
+	returnedPost.Tags = tags
+
+	return returnedPost, nil
 }

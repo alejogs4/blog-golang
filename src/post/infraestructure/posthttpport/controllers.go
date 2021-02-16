@@ -2,6 +2,7 @@ package posthttpport
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/alejogs4/blog/src/post/application"
@@ -37,6 +38,32 @@ func createPostController(response http.ResponseWriter, request *http.Request) {
 
 	response.WriteHeader(http.StatusCreated)
 	response.Write(responseContent)
+}
+
+func addPostLikeController(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	var likeInfo struct {
+		UserID string `json:"user_id"`
+		PostID string `json:"post_id"`
+		Type   string `json:"type"`
+	}
+
+	err := json.NewDecoder(request.Body).Decode(&likeInfo)
+	if err != nil {
+		httpError := posthttpadapter.MapPostErrorToHttpError(err)
+		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
+		return
+	}
+
+	err = postCommands.AddLike(likeInfo.UserID, likeInfo.PostID, likeInfo.Type)
+	fmt.Println(err)
+	if err != nil {
+		httpError := posthttpadapter.MapPostErrorToHttpError(err)
+		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
+		return
+	}
+
+	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(map[string]string{}, "Ok"), http.StatusCreated)
 }
 
 func getAllPostController(response http.ResponseWriter, request *http.Request) {

@@ -10,7 +10,7 @@ type PostRepository interface {
 	RemoveComment(comment Comment) error
 
 	GetPostCommentByID(id string) (Comment, error)
-	GetAllPosts() ([]Post, error)
+	GetAllPosts() ([]PostsDTO, error)
 	GetPostLikes(postID string) ([]like.Like, error)
 	GetPostByID(postID string) (Post, error)
 }

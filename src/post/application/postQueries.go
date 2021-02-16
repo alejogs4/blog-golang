@@ -10,6 +10,6 @@ func NewPostQueries(postRepository post.PostRepository) PostQueries {
 	return PostQueries{postRepository}
 }
 
-func (query PostQueries) GetAllPosts() ([]post.Post, error) {
+func (query PostQueries) GetAllPosts() ([]post.PostsDTO, error) {
 	return query.postRepository.GetAllPosts()
 }

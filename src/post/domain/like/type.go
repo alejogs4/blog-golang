@@ -21,7 +21,7 @@ func CreateNewLikeType(value string) (Type, error) {
 		return Type{}, ErrInvalidLikeType
 	}
 
-	return Type{value}, nil
+	return Type{normalizedValue}, nil
 }
 
 // Switch like type, like if it was previously dislike or dislike otherwise

@@ -4,6 +4,7 @@ import "errors"
 
 // ErrBadPostContent represent when a post is tried to be created with the wrong data
 var ErrBadPostContent = errors.New("Content was not provided with the enough data")
+var ErrNoFoundPost = errors.New("Post with id was not found")
 
 // Error codes for bad threatment of domain comment rules
 var (
