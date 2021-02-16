@@ -9,6 +9,7 @@ import (
 	"github.com/alejogs4/blog/src/post/infraestructure/posthttpadapter"
 	"github.com/alejogs4/blog/src/post/infraestructure/postrepository"
 	"github.com/alejogs4/blog/src/shared/infraestructure/httputils"
+	"github.com/alejogs4/blog/src/user/domain/user"
 	"github.com/gorilla/mux"
 )
 
@@ -27,7 +28,8 @@ func createPostController(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = postCommands.CreateNewPost(httpBlogPost.UserID, httpBlogPost.Title, httpBlogPost.Content, httpBlogPost.Picture, httpBlogPost.Tags)
+	userDTO, _ := request.Context().Value("user").(user.UserDTO)
+	err = postCommands.CreateNewPost(userDTO.ID, httpBlogPost.Title, httpBlogPost.Content, httpBlogPost.Picture, httpBlogPost.Tags)
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)
 		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
@@ -40,10 +42,12 @@ func createPostController(response http.ResponseWriter, request *http.Request) {
 func addPostLikeController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	var likeInfo struct {
-		UserID string `json:"user_id"`
-		Type   string `json:"type"`
+		Type string `json:"type"`
 	}
+
 	postID := mux.Vars(request)["id"]
+	// Improvement check for errors here
+	userDTO, _ := request.Context().Value("user").(user.UserDTO)
 
 	err := json.NewDecoder(request.Body).Decode(&likeInfo)
 	if err != nil {
@@ -52,7 +56,7 @@ func addPostLikeController(response http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	err = postCommands.AddLike(likeInfo.UserID, postID, likeInfo.Type)
+	err = postCommands.AddLike(userDTO.ID, postID, likeInfo.Type)
 
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)

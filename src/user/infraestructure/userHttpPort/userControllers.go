@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/alejogs4/blog/src/shared/infraestructure/httputils"
+	"github.com/alejogs4/blog/src/shared/infraestructure/token"
 	usercommands "github.com/alejogs4/blog/src/user/application/userCommands"
 	"github.com/alejogs4/blog/src/user/domain/user"
 	userrepository "github.com/alejogs4/blog/src/user/infraestructure/userRepository"
@@ -34,11 +35,18 @@ func loginHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	userToken, err := token.GenerateToken(user)
+	if err != nil {
+		httpError := mapUserErrorToHttpError(err)
+		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
+		return
+	}
+
 	userResponse := map[string]map[string]interface{}{ // This sucks
 		"data": {
 			"user":    user,
 			"message": "Ok",
-			"token":   "",
+			"token":   userToken,
 		},
 	}
 
