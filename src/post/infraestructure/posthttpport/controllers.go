@@ -34,19 +34,16 @@ func createPostController(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	responseContent, _ := json.Marshal(map[string]string{"Message": "Post created"})
-
-	response.WriteHeader(http.StatusCreated)
-	response.Write(responseContent)
+	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(map[string]string{}, "Post created"), http.StatusCreated)
 }
 
 func addPostLikeController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	var likeInfo struct {
 		UserID string `json:"user_id"`
-		PostID string `json:"post_id"`
 		Type   string `json:"type"`
 	}
+	postID := mux.Vars(request)["id"]
 
 	err := json.NewDecoder(request.Body).Decode(&likeInfo)
 	if err != nil {
@@ -55,7 +52,7 @@ func addPostLikeController(response http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	err = postCommands.AddLike(likeInfo.UserID, likeInfo.PostID, likeInfo.Type)
+	err = postCommands.AddLike(likeInfo.UserID, postID, likeInfo.Type)
 
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)

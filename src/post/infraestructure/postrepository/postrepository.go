@@ -124,7 +124,7 @@ func (postgres PostgresRepository) GetAllPosts() ([]post.PostsDTO, error) {
 }
 
 func (postgres PostgresRepository) GetPostLikes(postID string) ([]like.Like, error) {
-	var likes []like.Like
+	var likes []like.Like = []like.Like{}
 
 	result, err := database.PostgresDB.Query(`
 	SELECT id, post_id, person_id, state, type
