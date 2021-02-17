@@ -60,12 +60,12 @@ func (pc PostCommands) AddLike(userID, postID, Type string) error {
 		return err
 	}
 
-	currentPost, error := pc.postRepository.GetPostByID(postID)
+	newLike, error := like.CreateNewLike(uuid.New().String(), postID, userID, likeType.GetTypeValue(), like.Active)
 	if error != nil {
 		return error
 	}
 
-	newLike, error := like.CreateNewLike(uuid.New().String(), postID, userID, likeType.GetTypeValue(), like.Active)
+	currentPost, error := pc.postRepository.GetPostByID(postID)
 	if error != nil {
 		return error
 	}
