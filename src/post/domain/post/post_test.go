@@ -80,6 +80,13 @@ func TestCommentEntity(t *testing.T) {
 		}
 	})
 
+	t.Run("Should not throw an error if all fields are filled", func(t *testing.T) {
+		_, err := post.CreateNewComment("id", "post-id", "user-id", "content")
+		if err != nil {
+			t.Errorf("Error: Should not have thrown the error -- %s", err.Error())
+		}
+	})
+
 	t.Run(fmt.Sprintf("Should throw an error if comment length is greather than %d characters", post.MaxCommentContent), func(t *testing.T) {
 		var longContent bytes.Buffer
 		for i := 0; i < post.MaxCommentContent+10; i++ {
@@ -99,6 +106,23 @@ func TestCommentEntity(t *testing.T) {
 		_, err = post.CreateNewComment("id", "dd", "dd", shortContent.String())
 		if err != nil {
 			t.Errorf("Error: Should not have thrown the error -- %s", err.Error())
+		}
+	})
+
+	t.Run("Should change comment state to removed if RemoveComment method is executed", func(t *testing.T) {
+		comment, _ := post.CreateNewComment("id", "post-id", "user-id", "content")
+		if comment.State != post.ActiveComment {
+			t.Errorf("Error: comment state should be initially %v", post.ActiveComment)
+		}
+
+		comment.RemoveComment()
+		if comment.State != post.RemovedComment {
+			t.Errorf("Error: comment must have changed to %v", post.RemovedComment)
+		}
+
+		err := comment.RemoveComment()
+		if err == nil {
+			t.Errorf("Error: should have thrown %s", post.ErrInvalidCommentState)
 		}
 	})
 }

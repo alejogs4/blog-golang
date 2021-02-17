@@ -6,7 +6,7 @@ import (
 	fieldutils "github.com/alejogs4/blog/src/shared/domain/fieldsutils"
 )
 
-const minPasswordLength = 6
+const MinPasswordLength = 6
 
 type User struct {
 	id            string
@@ -27,7 +27,7 @@ func NewUser(id, firstname, lastname, email, password string, emailVerified bool
 		return User{}, ErrBadUserData
 	}
 
-	if len(password) < minPasswordLength {
+	if len(password) < MinPasswordLength {
 		return User{}, ErrTooShortUserPassword
 	}
 
