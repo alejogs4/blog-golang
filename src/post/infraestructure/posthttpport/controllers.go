@@ -41,7 +41,7 @@ func createPostController(response http.ResponseWriter, request *http.Request) {
 	}
 	defer file.Close()
 
-	newFile, err := ioutil.TempFile("pictures", "upload-*.jpeg")
+	newFile, err := ioutil.TempFile("images", "upload-*.jpeg")
 	if err != nil {
 		httputils.DispatchNewHttpError(response, "Something went wrong copying the picture", http.StatusInternalServerError)
 		return

@@ -26,6 +26,8 @@ func main() {
 	}
 
 	router := mux.NewRouter()
+
+	router.Handle("/images/{picture}", http.StripPrefix("/images/", http.FileServer(http.Dir("./images"))))
 	posthttpport.HandlePostHttpRoutes(router)
 	userhttpport.HandleUserRoutes(router)
 
