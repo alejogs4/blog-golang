@@ -2,7 +2,9 @@ package posthttpport
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/alejogs4/blog/src/post/application"
 	"github.com/alejogs4/blog/src/post/domain/post"
@@ -20,16 +22,47 @@ func createPostController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 
 	var httpBlogPost post.Post
+	httpBlogPost.Content = request.FormValue("content")
+	httpBlogPost.Title = request.FormValue("title")
 
-	err := json.NewDecoder(request.Body).Decode(&httpBlogPost)
+	tags := strings.Split(strings.TrimSpace(request.FormValue("tags")), ",")
+	postTags := make([]post.Tag, len(tags))
 
+	for _, tag := range tags {
+		postTags = append(postTags, post.Tag{ID: tag, Content: tag})
+	}
+	httpBlogPost.Tags = postTags
+
+	// This could be refactored
+	file, _, err := request.FormFile("picture")
 	if err != nil {
-		httputils.DispatchNewHttpError(response, "All fields must be sent", http.StatusBadRequest)
+		httputils.DispatchNewHttpError(response, "Something went wrong reading the picture", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	newFile, err := ioutil.TempFile("pictures", "upload-*.jpeg")
+	if err != nil {
+		httputils.DispatchNewHttpError(response, "Something went wrong copying the picture", http.StatusInternalServerError)
+		return
+	}
+	picturePath := "/" + newFile.Name()
+
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		httputils.DispatchNewHttpError(response, "Something went wrong copying the picture", http.StatusInternalServerError)
 		return
 	}
 
+	_, err = newFile.Write(fileBytes)
+	if err != nil {
+		httputils.DispatchNewHttpError(response, "Something went wrong copying the picture", http.StatusInternalServerError)
+		return
+	}
+	//
+
 	userDTO, _ := request.Context().Value("user").(user.UserDTO)
-	err = postCommands.CreateNewPost(userDTO.ID, httpBlogPost.Title, httpBlogPost.Content, httpBlogPost.Picture, httpBlogPost.Tags)
+	err = postCommands.CreateNewPost(userDTO.ID, httpBlogPost.Title, httpBlogPost.Content, picturePath, httpBlogPost.Tags)
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)
 		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
