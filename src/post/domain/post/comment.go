@@ -3,7 +3,7 @@ package post
 import "strings"
 
 const (
-	maxCommentContent = 256
+	MaxCommentContent = 256
 	// RemovedComment a comment that has been removed
 	RemovedComment = "REMOVED"
 	// ActiveComment a comment in its by default state
@@ -55,7 +55,7 @@ func validateCommentInfo(comment Comment) error {
 		}
 	}
 
-	if len(comment.Content) > maxCommentContent {
+	if len(comment.Content) > MaxCommentContent {
 		return ErrInvalidCommentLength
 	}
 
