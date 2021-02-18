@@ -13,7 +13,7 @@ import (
 
 var errCopyingFile = errors.New("File: file must be present")
 
-func uploadFile(response http.ResponseWriter, request *http.Request, formField, folder string) (string, error) {
+func uploadFile(request *http.Request, formField, folder string) (string, error) {
 	file, _, err := request.FormFile(formField)
 	if err != nil {
 		return "", post.ErrMissingPostPicture
@@ -43,7 +43,7 @@ func UploadFile(formField, folder string) middleware.Middleware {
 		return func(response http.ResponseWriter, request *http.Request) {
 			response.Header().Set("Content-Type", "application/json")
 
-			filePath, err := uploadFile(response, request, formField, folder)
+			filePath, err := uploadFile(request, formField, folder)
 			if err != nil {
 				httpError := mapFileErrorToHttpError(err)
 				httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
