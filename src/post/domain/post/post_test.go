@@ -3,6 +3,7 @@ package post_test
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/alejogs4/blog/src/post/domain/like"
@@ -123,6 +124,27 @@ func TestCommentEntity(t *testing.T) {
 		err := comment.RemoveComment()
 		if err == nil {
 			t.Errorf("Error: should have thrown %s", post.ErrInvalidCommentState)
+		}
+	})
+}
+
+func TestPostDTO(t *testing.T) {
+	t.Run("Should return a proper instance of PostDTO", func(t *testing.T) {
+		rawPost, _ := post.CreateNewPost("123", "123", "title", "content", "picture", []post.Comment{}, []post.Tag{}, []like.Like{})
+		postDTO := post.ToPostsDTO(rawPost, 12, 23, 3)
+		expectedDTO := post.PostsDTO{
+			ID:            "123",
+			UserID:        "123",
+			Title:         "title",
+			Content:       "content",
+			Picture:       "picture",
+			Likes:         12,
+			Dislikes:      23,
+			CommentsCount: 3,
+		}
+
+		if !reflect.DeepEqual(postDTO, expectedDTO) {
+			t.Errorf("Error: expected PostDTO %v, got PostDTO %v", expectedDTO, postDTO)
 		}
 	})
 }

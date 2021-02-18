@@ -11,6 +11,7 @@ type PostsDTO struct {
 	CommentsCount int    `json:"comments_count"`
 }
 
+// ToPostsDTO map posts into a dto being resolved to the client
 func ToPostsDTO(post Post, likes, dislikes, commentsCount int) PostsDTO {
 	return PostsDTO{
 		ID:            post.ID,

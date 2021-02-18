@@ -41,26 +41,32 @@ func NewUser(id, firstname, lastname, email, password string, emailVerified bool
 	}, nil
 }
 
+// GetID .
 func (user User) GetID() string {
 	return user.id
 }
 
+// GetFirstname .
 func (user User) GetFirstname() string {
 	return user.firstname
 }
 
+// GetLastname .
 func (user User) GetLastname() string {
 	return user.lastname
 }
 
+// GetEmail .
 func (user User) GetEmail() string {
 	return user.email
 }
 
+// GetEmailVerified .
 func (user User) GetEmailVerified() bool {
 	return user.emailVerified
 }
 
+// GetPassword .
 func (user User) GetPassword() string {
 	return user.password
 }

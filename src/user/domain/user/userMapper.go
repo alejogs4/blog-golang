@@ -1,5 +1,6 @@
 package user
 
+// ToDTO map a raw user into a UserDTO
 func ToDTO(rawUser User) UserDTO {
 	return UserDTO{
 		ID:            rawUser.GetID(),

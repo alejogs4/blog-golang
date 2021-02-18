@@ -3,6 +3,7 @@ package post
 import "strings"
 
 const (
+	// MaxCommentContent how long a comment it's allowed to be
 	MaxCommentContent = 256
 	// RemovedComment a comment that has been removed
 	RemovedComment = "REMOVED"

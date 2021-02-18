@@ -38,6 +38,7 @@ func uploadFile(request *http.Request, formField, folder string) (string, error)
 	return picturePath, nil
 }
 
+// UploadFile middleware that upload an incoming file in a given existing folder
 func UploadFile(formField, folder string) middleware.Middleware {
 	return func(f http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {

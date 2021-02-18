@@ -42,6 +42,7 @@ func (post *Post) IsLikeAlreadyDone(like like.Like) bool {
 	return false
 }
 
+// LookPresentUserLike find is an user like it has been already given
 func (post *Post) LookPresentUserLike(userID string, Type like.Type) like.Like {
 	activeState, _ := like.CreateNewLikeState(like.Active)
 	for _, postLike := range post.Likes {
