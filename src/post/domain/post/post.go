@@ -1,6 +1,10 @@
 package post
 
-import "github.com/alejogs4/blog/src/post/domain/like"
+import (
+	"strings"
+
+	"github.com/alejogs4/blog/src/post/domain/like"
+)
 
 type Post struct {
 	ID       string      `json:"id"`
@@ -15,7 +19,13 @@ type Post struct {
 
 // CreateNewPost will verify that right data was provided and return a new instance of the post if so
 func CreateNewPost(id, userID, title, content, picture string, comments []Comment, tags []Tag, likes []like.Like) (Post, error) {
-	if id == "" || userID == "" || title == "" || content == "" || picture == "" {
+	normalizedID := strings.TrimSpace(id)
+	normalizedUserID := strings.TrimSpace(userID)
+	normalizedTitle := strings.TrimSpace(title)
+	normalizedContent := strings.TrimSpace(content)
+	normalizedPicture := strings.TrimSpace(picture)
+
+	if normalizedID == "" || normalizedUserID == "" || normalizedTitle == "" || normalizedContent == "" || normalizedPicture == "" {
 		return Post{}, ErrBadPostContent
 	}
 
