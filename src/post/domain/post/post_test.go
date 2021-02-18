@@ -148,3 +148,29 @@ func TestPostDTO(t *testing.T) {
 		}
 	})
 }
+
+func TestTagEntity(t *testing.T) {
+	t.Run("Should throw an error if either id or content are empty", func(t *testing.T) {
+		_, err := post.CreateNewTag("", "")
+		if err == nil {
+			t.Errorf("Error: Should have thrown error %s", post.ErrInvalidTagInformation)
+		}
+
+		_, err = post.CreateNewTag("    ", "    ")
+		if err == nil {
+			t.Errorf("Error: Should have thrown error %s", post.ErrInvalidTagInformation)
+		}
+	})
+
+	t.Run("Should return proper tag instance if data is correctly provided", func(t *testing.T) {
+		tag, _ := post.CreateNewTag("123", "backend")
+		expectedTag := post.Tag{
+			ID:      "123",
+			Content: "backend",
+		}
+
+		if !reflect.DeepEqual(tag, expectedTag) {
+			t.Errorf("Error: expected tag: %v, got tag: %v", expectedTag, tag)
+		}
+	})
+}

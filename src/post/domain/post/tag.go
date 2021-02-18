@@ -1,5 +1,7 @@
 package post
 
+import "strings"
+
 type Tag struct {
 	ID      string `json:"id"`
 	Content string `json:"content"`
@@ -7,11 +9,14 @@ type Tag struct {
 
 // CreateNewTag .
 func CreateNewTag(id, content string) (Tag, error) {
-	if id == "" || content == "" {
+	normalizedID := strings.TrimSpace(id)
+	normalizedContent := strings.TrimSpace(content)
+
+	if normalizedID == "" || normalizedContent == "" {
 		return Tag{}, ErrInvalidTagInformation
 	}
 
-	return Tag{id, content}, nil
+	return Tag{normalizedID, normalizedContent}, nil
 }
 
 // GetID .
