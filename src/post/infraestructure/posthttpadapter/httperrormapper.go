@@ -9,6 +9,7 @@ import (
 	"github.com/alejogs4/blog/src/shared/infraestructure/httputils"
 )
 
+// TODO: Look how refactor this function
 func MapPostErrorToHttpError(err error) httputils.HttpError {
 	if errors.Is(err, post.ErrBadPostContent) {
 		return httputils.HttpError{Status: http.StatusBadRequest, Message: post.ErrBadPostContent.Error()}

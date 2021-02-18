@@ -2,7 +2,6 @@ package posthttpport
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -33,36 +32,10 @@ func createPostController(response http.ResponseWriter, request *http.Request) {
 	}
 	httpBlogPost.Tags = postTags
 
-	// This could be refactored
-	file, _, err := request.FormFile("picture")
-	if err != nil {
-		httputils.DispatchNewHttpError(response, "Something went wrong reading the picture", http.StatusBadRequest)
-		return
-	}
-	defer file.Close()
-
-	newFile, err := ioutil.TempFile("images", "upload-*.jpeg")
-	if err != nil {
-		httputils.DispatchNewHttpError(response, "Something went wrong copying the picture", http.StatusInternalServerError)
-		return
-	}
-	picturePath := "/" + newFile.Name()
-
-	fileBytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		httputils.DispatchNewHttpError(response, "Something went wrong copying the picture", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = newFile.Write(fileBytes)
-	if err != nil {
-		httputils.DispatchNewHttpError(response, "Something went wrong copying the picture", http.StatusInternalServerError)
-		return
-	}
-	//
-
 	userDTO, _ := request.Context().Value("user").(user.UserDTO)
-	err = postCommands.CreateNewPost(userDTO.ID, httpBlogPost.Title, httpBlogPost.Content, picturePath, httpBlogPost.Tags)
+	userPicture, _ := request.Context().Value("file").(string)
+
+	err := postCommands.CreateNewPost(userDTO.ID, httpBlogPost.Title, httpBlogPost.Content, userPicture, httpBlogPost.Tags)
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)
 		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
