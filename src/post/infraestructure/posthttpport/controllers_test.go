@@ -16,28 +16,10 @@ import (
 )
 
 func TestUnitCreatePostController(t *testing.T) {
+
 	t.Run("Should return a bad request code if there are missing field", func(t *testing.T) {
-		formData := url.Values{}
-		formData.Add("title", "this is the title")
-		formData.Add("content", "")
-		formData.Add("tags", "1,2")
-
-		response := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodPost, "/api/v1/post", strings.NewReader(formData.Encode()))
-		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		mockRepository := mockPostRepositoryOK{}
-		var postCommands application.PostCommands = application.NewPostCommands(mockRepository)
-		var postQueries application.PostQueries = application.NewPostQueries(mockRepository)
-
-		controller := posthttppost.NewPostControllers(postCommands, postQueries)
-
-		rawUser, _ := user.NewUser("id", "Alejandro", "garcia", "alejogs4@gmail.com", "1234567", true)
-		userDTO := user.ToDTO(rawUser)
-		ctx := context.WithValue(request.Context(), "user", userDTO)
-		ctx = context.WithValue(ctx, "file", "/path/image.jpg")
-
-		controller.CreatePostController(response, request.WithContext(ctx))
+		response, request, controller := preparePostRequest("this is the title", "", "1,2")
+		controller.CreatePostController(response, request)
 
 		if response.Code != http.StatusBadRequest {
 			t.Errorf("Error: Expected status code: %d, received status code: %d", http.StatusBadRequest, response.Code)
@@ -53,27 +35,9 @@ func TestUnitCreatePostController(t *testing.T) {
 	})
 
 	t.Run("Should return StatusCreated if information was correctly provided", func(t *testing.T) {
-		formData := url.Values{}
-		formData.Add("title", "this is the title")
-		formData.Add("content", "this is a content")
-		formData.Add("tags", "1,2")
+		response, request, controller := preparePostRequest("this is the title", "this is the content", "1,2")
 
-		response := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodPost, "/api/v1/post", strings.NewReader(formData.Encode()))
-		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		mockRepository := mockPostRepositoryOK{}
-		var postCommands application.PostCommands = application.NewPostCommands(mockRepository)
-		var postQueries application.PostQueries = application.NewPostQueries(mockRepository)
-
-		controller := posthttppost.NewPostControllers(postCommands, postQueries)
-
-		rawUser, _ := user.NewUser("id", "Alejandro", "garcia", "alejogs4@gmail.com", "1234567", true)
-		userDTO := user.ToDTO(rawUser)
-		ctx := context.WithValue(request.Context(), "user", userDTO)
-		ctx = context.WithValue(ctx, "file", "/path/image.jpg")
-
-		controller.CreatePostController(response, request.WithContext(ctx))
+		controller.CreatePostController(response, request)
 		if response.Code != http.StatusCreated {
 			t.Errorf("Error: Expected status code: %d, received status code: %d", http.StatusCreated, response.Code)
 		}
@@ -89,4 +53,28 @@ func TestUnitCreatePostController(t *testing.T) {
 			t.Errorf("Error: Expected message %v, received message %v", expectedMessage, receivedResponse.Message)
 		}
 	})
+}
+
+func preparePostRequest(title, content, tags string) (*httptest.ResponseRecorder, *http.Request, posthttppost.PostControllers) {
+	formData := url.Values{}
+	formData.Add("title", title)
+	formData.Add("content", content)
+	formData.Add("tags", tags)
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/post", strings.NewReader(formData.Encode()))
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	mockRepository := mockPostRepositoryOK{}
+	var postCommands application.PostCommands = application.NewPostCommands(mockRepository)
+	var postQueries application.PostQueries = application.NewPostQueries(mockRepository)
+
+	controller := posthttppost.NewPostControllers(postCommands, postQueries)
+
+	rawUser, _ := user.NewUser("id", "Alejandro", "garcia", "alejogs4@gmail.com", "1234567", true)
+	userDTO := user.ToDTO(rawUser)
+	ctx := context.WithValue(request.Context(), "user", userDTO)
+	ctx = context.WithValue(ctx, "file", "/path/image.jpg")
+
+	return response, request.WithContext(ctx), controller
 }
