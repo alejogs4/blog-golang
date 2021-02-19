@@ -2,6 +2,7 @@ package posthttpport
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
@@ -66,7 +67,7 @@ func (controller PostControllers) AddPostLikeController(response http.ResponseWr
 		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
 		return
 	}
-
+	log.Println(userDTO, postID, "OELO")
 	err = controller.postCommands.AddLike(userDTO.ID, postID, likeInfo.Type)
 
 	if err != nil {

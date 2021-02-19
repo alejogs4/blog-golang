@@ -1,8 +1,10 @@
 package posthttpport_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -10,9 +12,11 @@ import (
 	"testing"
 
 	"github.com/alejogs4/blog/src/post/application"
+	"github.com/alejogs4/blog/src/post/domain/like"
 	"github.com/alejogs4/blog/src/post/domain/post"
 	posthttppost "github.com/alejogs4/blog/src/post/infraestructure/posthttpport"
 	"github.com/alejogs4/blog/src/user/domain/user"
+	"github.com/gorilla/mux"
 )
 
 func TestUnitCreatePostController(t *testing.T) {
@@ -55,6 +59,26 @@ func TestUnitCreatePostController(t *testing.T) {
 	})
 }
 
+func TestUnitAddLikeController(t *testing.T) {
+	t.Run("Should throw a bad request petition if type property is not sent properly", func(t *testing.T) {
+		response, request, controller := prepareAddLikeRequest("invalid-type")
+		controller.AddPostLikeController(response, request)
+
+		if response.Code != http.StatusBadRequest {
+			t.Errorf("Error: Expected error code %d, received error code %d", http.StatusBadRequest, response.Code)
+		}
+	})
+
+	t.Run("Should return a created status code if type is sent properly", func(t *testing.T) {
+		response, request, controller := prepareAddLikeRequest(like.TLike)
+		controller.AddPostLikeController(response, request)
+
+		if response.Code != http.StatusCreated {
+			t.Errorf("Error: Expected error code %d, received error code %d", http.StatusCreated, response.Code)
+		}
+	})
+}
+
 func preparePostRequest(title, content, tags string) (*httptest.ResponseRecorder, *http.Request, posthttppost.PostControllers) {
 	formData := url.Values{}
 	formData.Add("title", title)
@@ -75,6 +99,28 @@ func preparePostRequest(title, content, tags string) (*httptest.ResponseRecorder
 	userDTO := user.ToDTO(rawUser)
 	ctx := context.WithValue(request.Context(), "user", userDTO)
 	ctx = context.WithValue(ctx, "file", "/path/image.jpg")
+
+	return response, request.WithContext(ctx), controller
+}
+
+func prepareAddLikeRequest(sentType string) (*httptest.ResponseRecorder, *http.Request, posthttppost.PostControllers) {
+	requestBody := []byte(fmt.Sprintf(`{"type": "%v"}`, sentType))
+
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/post/123/like", bytes.NewBuffer(requestBody))
+	response := httptest.NewRecorder()
+	withPostIDRequest := mux.SetURLVars(request, map[string]string{"id": "123"})
+
+	request.Header.Set("Content-Type", "application/json")
+
+	rawUser, _ := user.NewUser("id", "Alejandro", "garcia", "alejogs4@gmail.com", "1234567", true)
+	userDTO := user.ToDTO(rawUser)
+	ctx := context.WithValue(withPostIDRequest.Context(), "user", userDTO)
+
+	// Here I just noticed that even though I will only use a command I need to pass it a query use case instance, so this could be refactored
+	mockRepository := mockPostRepositoryOK{}
+	var postCommands application.PostCommands = application.NewPostCommands(mockRepository)
+	var postQueries application.PostQueries = application.NewPostQueries(mockRepository)
+	controller := posthttppost.NewPostControllers(postCommands, postQueries)
 
 	return response, request.WithContext(ctx), controller
 }
