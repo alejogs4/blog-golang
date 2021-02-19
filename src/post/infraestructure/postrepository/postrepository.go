@@ -6,13 +6,18 @@ import (
 
 	"github.com/alejogs4/blog/src/post/domain/like"
 	"github.com/alejogs4/blog/src/post/domain/post"
-	"github.com/alejogs4/blog/src/shared/infraestructure/database"
 )
 
-type PostgresRepository struct{}
+type PostgresRepository struct {
+	db *sql.DB
+}
+
+func NewPostgresRepository(db *sql.DB) PostgresRepository {
+	return PostgresRepository{db}
+}
 
 func (postgres PostgresRepository) CreatePost(post post.Post) error {
-	_, err := database.PostgresDB.Exec(
+	_, err := postgres.db.Exec(
 		"INSERT INTO post(id, person_id, title, content, picture) VALUES($1, $2, $3, $4, $5)",
 		post.ID, post.UserID, post.Title, post.Content, post.Picture,
 	)
@@ -22,7 +27,7 @@ func (postgres PostgresRepository) CreatePost(post post.Post) error {
 	}
 
 	for _, tag := range post.Tags {
-		_, err = database.PostgresDB.Exec(
+		_, err = postgres.db.Exec(
 			"INSERT INTO post_tag(tag_id, post_id) VALUES($1, $2)",
 			tag.GetID(), post.ID,
 		)
@@ -32,7 +37,7 @@ func (postgres PostgresRepository) CreatePost(post post.Post) error {
 }
 
 func (postgres PostgresRepository) AddLike(postID string, like like.Like) error {
-	_, err := database.PostgresDB.Exec(
+	_, err := postgres.db.Exec(
 		"INSERT INTO post_like(id, person_id, post_id, state, type) VALUES($1, $2, $3, $4, $5)",
 		like.ID, like.UserID, like.PostID, like.State.GetLikeState(), like.Type.GetTypeValue(),
 	)
@@ -41,7 +46,7 @@ func (postgres PostgresRepository) AddLike(postID string, like like.Like) error 
 }
 
 func (postgres PostgresRepository) RemoveLike(removedLike like.Like) error {
-	_, err := database.PostgresDB.Exec(
+	_, err := postgres.db.Exec(
 		"UPDATE post_like SET state=$1 WHERE person_id=$2 AND post_id=$3",
 		like.Removed, removedLike.UserID, removedLike.PostID,
 	)
@@ -50,7 +55,7 @@ func (postgres PostgresRepository) RemoveLike(removedLike like.Like) error {
 }
 
 func (postgres PostgresRepository) AddComment(comment post.Comment) error {
-	_, err := database.PostgresDB.Exec(
+	_, err := postgres.db.Exec(
 		"INSERT INTO comment(id, content, person_id, post_id, state) VALUES($1, $2, $3, $4, $5)",
 		comment.ID, comment.Content, comment.UserID, comment.PostID, comment.State,
 	)
@@ -59,7 +64,7 @@ func (postgres PostgresRepository) AddComment(comment post.Comment) error {
 }
 
 func (postgres PostgresRepository) RemoveComment(comment post.Comment) error {
-	_, err := database.PostgresDB.Exec(
+	_, err := postgres.db.Exec(
 		"UPDATE comment SET state=$1 WHERE id=$2",
 		post.RemovedComment, comment.ID,
 	)
@@ -70,7 +75,7 @@ func (postgres PostgresRepository) RemoveComment(comment post.Comment) error {
 func (postgres PostgresRepository) GetPostCommentByID(id string) (post.Comment, error) {
 	var comment post.Comment
 
-	result := database.PostgresDB.QueryRow("SELECT id, content, person_id, post_id, state FROM comment WHERE id=$1", id)
+	result := postgres.db.QueryRow("SELECT id, content, person_id, post_id, state FROM comment WHERE id=$1", id)
 	err := result.Scan(&comment.ID, &comment.Content, &comment.UserID, &comment.PostID, &comment.State)
 
 	if err != nil {
@@ -83,7 +88,7 @@ func (postgres PostgresRepository) GetPostCommentByID(id string) (post.Comment, 
 func (postgres PostgresRepository) GetAllPosts() ([]post.PostsDTO, error) {
 	// TODO: Optimize this query
 	var posts []post.PostsDTO = []post.PostsDTO{}
-	result, err := database.PostgresDB.Query(`
+	result, err := postgres.db.Query(`
 		SELECT
 		p.id, p.person_id, p.title, p.content, p.picture,
 		(SELECT COUNT(l.id) FROM post_like AS l WHERE l.post_id=p.id AND state=$1 AND type=$2) as likes,
@@ -126,7 +131,7 @@ func (postgres PostgresRepository) GetAllPosts() ([]post.PostsDTO, error) {
 func (postgres PostgresRepository) GetPostLikes(postID string) ([]like.Like, error) {
 	var likes []like.Like = []like.Like{}
 
-	result, err := database.PostgresDB.Query(`
+	result, err := postgres.db.Query(`
 	SELECT id, post_id, person_id, state, type
 	FROM post_like
 	WHERE post_id=$1 AND state=$2`,
@@ -151,7 +156,7 @@ func (postgres PostgresRepository) GetPostLikes(postID string) ([]like.Like, err
 
 func (postgres PostgresRepository) getPostTags(postID string) ([]post.Tag, error) {
 	var tags []post.Tag = []post.Tag{}
-	rows, err := database.PostgresDB.Query(
+	rows, err := postgres.db.Query(
 		"SELECT t.id, t.content FROM tag t INNER JOIN post_tag pt ON pt.tag_id = t.id WHERE pt.post_id=$1", postID,
 	)
 
@@ -176,7 +181,7 @@ func (postgres PostgresRepository) getPostTags(postID string) ([]post.Tag, error
 func (postgres PostgresRepository) getPostComments(postID string) ([]post.Comment, error) {
 	var comments []post.Comment = []post.Comment{}
 
-	rows, err := database.PostgresDB.Query(
+	rows, err := postgres.db.Query(
 		"SELECT id, content, person_id, post_id, state FROM comment c WHERE post_id=$1", postID,
 	)
 	if err != nil {
@@ -199,7 +204,7 @@ func (postgres PostgresRepository) getPostComments(postID string) ([]post.Commen
 
 func (postgres PostgresRepository) GetPostByID(postID string) (post.Post, error) {
 	var returnedPost post.Post
-	result := database.PostgresDB.QueryRow(
+	result := postgres.db.QueryRow(
 		"SELECT id, person_id, title, content, picture FROM post WHERE id=$1", postID,
 	)
 

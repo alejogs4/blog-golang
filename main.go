@@ -4,7 +4,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/alejogs4/blog/src/post/application"
 	"github.com/alejogs4/blog/src/post/infraestructure/posthttpport"
+	"github.com/alejogs4/blog/src/post/infraestructure/postrepository"
 	"github.com/alejogs4/blog/src/shared/infraestructure/database"
 	"github.com/alejogs4/blog/src/shared/infraestructure/token"
 	userhttpport "github.com/alejogs4/blog/src/user/infraestructure/userHttpPort"
@@ -25,10 +27,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	router := mux.NewRouter()
+	// Post use cases
+	var postCommands application.PostCommands = application.NewPostCommands(postrepository.NewPostgresRepository(database.PostgresDB))
+	var postQueries application.PostQueries = application.NewPostQueries(postrepository.NewPostgresRepository(database.PostgresDB))
 
+	router := mux.NewRouter()
 	router.Handle("/images/{picture}", http.StripPrefix("/images/", http.FileServer(http.Dir("./images"))))
-	posthttpport.HandlePostHttpRoutes(router)
+
+	posthttpport.HandlePostHttpRoutes(router, postCommands, postQueries)
 	userhttpport.HandleUserRoutes(router)
 
 	log.Println("Running server")

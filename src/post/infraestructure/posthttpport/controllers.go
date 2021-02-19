@@ -8,16 +8,21 @@ import (
 	"github.com/alejogs4/blog/src/post/application"
 	"github.com/alejogs4/blog/src/post/domain/post"
 	"github.com/alejogs4/blog/src/post/infraestructure/posthttpadapter"
-	"github.com/alejogs4/blog/src/post/infraestructure/postrepository"
 	"github.com/alejogs4/blog/src/shared/infraestructure/httputils"
 	"github.com/alejogs4/blog/src/user/domain/user"
 	"github.com/gorilla/mux"
 )
 
-var postCommands application.PostCommands = application.NewPostCommands(postrepository.PostgresRepository{})
-var postQueries application.PostQueries = application.NewPostQueries(postrepository.PostgresRepository{})
+type postControllers struct {
+	postCommands application.PostCommands
+	postQueries  application.PostQueries
+}
 
-func createPostController(response http.ResponseWriter, request *http.Request) {
+func NewPostControllers(postCommands application.PostCommands, postQueries application.PostQueries) postControllers {
+	return postControllers{postCommands: postCommands, postQueries: postQueries}
+}
+
+func (controller postControllers) CreatePostController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 
 	var httpBlogPost post.Post
@@ -35,7 +40,7 @@ func createPostController(response http.ResponseWriter, request *http.Request) {
 	userDTO, _ := request.Context().Value("user").(user.UserDTO)
 	userPicture, _ := request.Context().Value("file").(string)
 
-	err := postCommands.CreateNewPost(userDTO.ID, httpBlogPost.Title, httpBlogPost.Content, userPicture, httpBlogPost.Tags)
+	err := controller.postCommands.CreateNewPost(userDTO.ID, httpBlogPost.Title, httpBlogPost.Content, userPicture, httpBlogPost.Tags)
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)
 		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
@@ -45,7 +50,7 @@ func createPostController(response http.ResponseWriter, request *http.Request) {
 	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(map[string]string{}, "Post created"), http.StatusCreated)
 }
 
-func addPostLikeController(response http.ResponseWriter, request *http.Request) {
+func (controller postControllers) AddPostLikeController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	var likeInfo struct {
 		Type string `json:"type"`
@@ -62,7 +67,7 @@ func addPostLikeController(response http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	err = postCommands.AddLike(userDTO.ID, postID, likeInfo.Type)
+	err = controller.postCommands.AddLike(userDTO.ID, postID, likeInfo.Type)
 
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)
@@ -73,10 +78,10 @@ func addPostLikeController(response http.ResponseWriter, request *http.Request) 
 	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(map[string]string{}, "Ok"), http.StatusCreated)
 }
 
-func getPostByIDController(response http.ResponseWriter, request *http.Request) {
+func (controller postControllers) GetPostByIDController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	postID := mux.Vars(request)["id"]
-	post, err := postQueries.GetPostByID(postID)
+	post, err := controller.postQueries.GetPostByID(postID)
 
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)
@@ -87,10 +92,10 @@ func getPostByIDController(response http.ResponseWriter, request *http.Request) 
 	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(post, "Ok"), http.StatusOK)
 }
 
-func getAllPostController(response http.ResponseWriter, request *http.Request) {
+func (controller postControllers) GetAllPostController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 
-	posts, err := postQueries.GetAllPosts()
+	posts, err := controller.postQueries.GetAllPosts()
 	if err != nil {
 		httpError := posthttpadapter.MapPostErrorToHttpError(err)
 		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
