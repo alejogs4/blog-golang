@@ -13,16 +13,16 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type postControllers struct {
+type PostControllers struct {
 	postCommands application.PostCommands
 	postQueries  application.PostQueries
 }
 
-func NewPostControllers(postCommands application.PostCommands, postQueries application.PostQueries) postControllers {
-	return postControllers{postCommands: postCommands, postQueries: postQueries}
+func NewPostControllers(postCommands application.PostCommands, postQueries application.PostQueries) PostControllers {
+	return PostControllers{postCommands: postCommands, postQueries: postQueries}
 }
 
-func (controller postControllers) CreatePostController(response http.ResponseWriter, request *http.Request) {
+func (controller PostControllers) CreatePostController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 
 	var httpBlogPost post.Post
@@ -50,7 +50,7 @@ func (controller postControllers) CreatePostController(response http.ResponseWri
 	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(map[string]string{}, "Post created"), http.StatusCreated)
 }
 
-func (controller postControllers) AddPostLikeController(response http.ResponseWriter, request *http.Request) {
+func (controller PostControllers) AddPostLikeController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	var likeInfo struct {
 		Type string `json:"type"`
@@ -78,7 +78,7 @@ func (controller postControllers) AddPostLikeController(response http.ResponseWr
 	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(map[string]string{}, "Ok"), http.StatusCreated)
 }
 
-func (controller postControllers) GetPostByIDController(response http.ResponseWriter, request *http.Request) {
+func (controller PostControllers) GetPostByIDController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	postID := mux.Vars(request)["id"]
 	post, err := controller.postQueries.GetPostByID(postID)
@@ -92,7 +92,7 @@ func (controller postControllers) GetPostByIDController(response http.ResponseWr
 	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(post, "Ok"), http.StatusOK)
 }
 
-func (controller postControllers) GetAllPostController(response http.ResponseWriter, request *http.Request) {
+func (controller PostControllers) GetAllPostController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 
 	posts, err := controller.postQueries.GetAllPosts()
