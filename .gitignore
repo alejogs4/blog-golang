@@ -1,4 +1,4 @@
 /certificates/*
 /images/*
 .DS_Store
-coverage.out
+coverage.*

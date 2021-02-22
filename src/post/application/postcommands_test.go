@@ -9,52 +9,8 @@ import (
 	"github.com/alejogs4/blog/src/post/domain/post"
 )
 
-type PostRepositoryMock struct {
-	RemovedLike  *like.Like
-	AddedLike    *like.Like
-	ReturnedPost post.Post
-}
-
-func (pr PostRepositoryMock) CreatePost(post post.Post) error {
-	return nil
-}
-
-func (pr PostRepositoryMock) AddLike(postID string, like like.Like) error {
-	*pr.AddedLike = like
-	return nil
-}
-
-func (pr PostRepositoryMock) RemoveLike(like like.Like) error {
-	*pr.RemovedLike = like
-	return nil
-}
-
-func (pr PostRepositoryMock) AddComment(comment post.Comment) error {
-	return nil
-}
-
-func (pr PostRepositoryMock) RemoveComment(comment post.Comment) error {
-	return nil
-}
-
-func (pr PostRepositoryMock) GetPostCommentByID(id string) (post.Comment, error) {
-	return post.Comment{}, nil
-}
-
-func (pr PostRepositoryMock) GetAllPosts() ([]post.PostsDTO, error) {
-	return []post.PostsDTO{}, nil
-}
-
-func (pr PostRepositoryMock) GetPostLikes(postID string) ([]like.Like, error) {
-	return []like.Like{}, nil
-}
-
-func (pr PostRepositoryMock) GetPostByID(postID string) (post.Post, error) {
-	return pr.ReturnedPost, nil
-}
-
 func TestPostCommandsCreateNewPost(t *testing.T) {
-	postCommands := application.NewPostCommands(PostRepositoryMock{})
+	postCommands := application.NewPostCommands(postRepositoryMock{})
 
 	t.Run("Should return nil if all fields are correctly provided", func(t *testing.T) {
 		err := postCommands.CreateNewPost("123", "title", "content", "picture", []post.Tag{})
@@ -78,7 +34,7 @@ func TestPostCommandsCreateNewPost(t *testing.T) {
 }
 
 func TestPostCommandsCreateNewComment(t *testing.T) {
-	postCommands := application.NewPostCommands(PostRepositoryMock{})
+	postCommands := application.NewPostCommands(postRepositoryMock{})
 	t.Run("Should return ErrBadCommentContent if not all fields were provided", func(t *testing.T) {
 		err := postCommands.CreateNewComment("  ", " ", "content")
 
@@ -102,7 +58,7 @@ func TestPostCommandsCreateNewComment(t *testing.T) {
 
 func TestPostCommandsAddLike(t *testing.T) {
 	t.Run("Should return an error if like type is not either like or dislike", func(t *testing.T) {
-		postCommands := application.NewPostCommands(PostRepositoryMock{})
+		postCommands := application.NewPostCommands(postRepositoryMock{})
 		err := postCommands.AddLike("user-id", "post-id", "invalid-like-type")
 
 		if err == nil {
@@ -117,7 +73,7 @@ func TestPostCommandsAddLike(t *testing.T) {
 	t.Run("Should remove like if the same like type is present", func(t *testing.T) {
 		targetLike := like.Like{ID: "123", PostID: "123", UserID: "user-id", Type: like.Type{Value: like.TLike}, State: like.State{Value: like.Active}}
 		removedLike := like.Like{}
-		mockPostRepository := PostRepositoryMock{
+		mockPostRepository := postRepositoryMock{
 			ReturnedPost: post.Post{
 				ID:       "123",
 				UserID:   "user-id",
@@ -151,7 +107,7 @@ func TestPostCommandsAddLike(t *testing.T) {
 		removedLike := like.Like{}
 		addedLike := like.Like{}
 
-		mockPostRepository := PostRepositoryMock{
+		mockPostRepository := postRepositoryMock{
 			ReturnedPost: post.Post{
 				ID:       "123",
 				UserID:   "user-id",
@@ -180,6 +136,43 @@ func TestPostCommandsAddLike(t *testing.T) {
 
 		if !addedLike.Equals(targetLike) {
 			t.Errorf("Error: AddLike was expected to had added like %v", targetLike)
+		}
+	})
+}
+
+func TestRemovePostComment(t *testing.T) {
+	t.Run("Should return error if user to remove the post is no the post owner", func(t *testing.T) {
+		mockPostRepository := postRepositoryMock{
+			ReturnedComment: post.Comment{
+				UserID: "1234567",
+			},
+		}
+
+		postCommands := application.NewPostCommands(mockPostRepository)
+		err := postCommands.RemovePostComment("id", "different-user-id")
+
+		if err == nil {
+			t.Errorf("Error: Expected error %v, received nil", post.ErrNoCommentOwner)
+		}
+
+		if !errors.Is(err, post.ErrNoCommentOwner) {
+			t.Errorf("Error: Expected error %v, received %v", post.ErrNoCommentOwner, err)
+		}
+	})
+
+	t.Run("Should return no error if user who remove the post is the post owner", func(t *testing.T) {
+		userID := "1234567"
+		mockPostRepository := postRepositoryMock{
+			ReturnedComment: post.Comment{
+				UserID: userID,
+			},
+		}
+
+		postCommands := application.NewPostCommands(mockPostRepository)
+		err := postCommands.RemovePostComment("id", userID)
+
+		if err != nil {
+			t.Errorf("Error: No error was expected, received %v", err)
 		}
 	})
 }
