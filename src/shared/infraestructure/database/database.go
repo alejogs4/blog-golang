@@ -3,14 +3,13 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"sync"
 )
 
 const (
-	host   = "localhost"
-	port   = 5432
-	user   = "postgres"
-	dbname = "blog"
+	host = "localhost"
+	port = 5432
 )
 
 var (
@@ -29,8 +28,11 @@ func InitDatabase() error {
 }
 
 func initDatabase() error {
+	databaseUser := os.Getenv("POSTGRES_USER")
+	databaseName := os.Getenv("POSTGRES_DB")
+
 	postgresInformation := fmt.Sprintf("host=%s port=%d user=%s "+
-		"dbname=%s sslmode=disable", host, port, user, dbname)
+		"dbname=%s sslmode=disable", host, port, databaseUser, databaseName)
 
 	var err error
 	PostgresDB, err = sql.Open("postgres", postgresInformation)
