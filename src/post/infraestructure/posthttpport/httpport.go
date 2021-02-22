@@ -1,9 +1,12 @@
 package posthttpport
 
 import (
+	"net/http"
+
 	"github.com/alejogs4/blog/src/post/application"
 	fileupload "github.com/alejogs4/blog/src/post/infraestructure/fileUpload"
 	"github.com/alejogs4/blog/src/shared/infraestructure/authentication"
+	"github.com/alejogs4/blog/src/shared/infraestructure/httputils"
 	"github.com/alejogs4/blog/src/shared/infraestructure/middleware"
 	"github.com/gorilla/mux"
 )
@@ -13,10 +16,24 @@ func HandlePostHttpRoutes(router *mux.Router, postCommands application.PostComma
 
 	router.HandleFunc("/api/v1/post", middleware.Chain(
 		postController.CreatePostController,
+		httputils.Verb(http.MethodPost),
 		authentication.LoginMiddleare(),
 		fileupload.UploadFile("picture", "images"),
 	))
-	router.HandleFunc("/api/v1/post/{id}", postController.GetPostByIDController)
-	router.HandleFunc("/api/v1/posts", postController.GetAllPostController)
-	router.HandleFunc("/api/v1/post/{id}/like", middleware.Chain(postController.AddPostLikeController, authentication.LoginMiddleare()))
+
+	router.HandleFunc("/api/v1/post/{id}", middleware.Chain(
+		postController.GetPostByIDController,
+		httputils.Verb(http.MethodGet),
+	))
+
+	router.HandleFunc("/api/v1/posts", middleware.Chain(
+		postController.GetAllPostController,
+		httputils.Verb(http.MethodGet),
+	))
+
+	router.HandleFunc("/api/v1/post/{id}/like", middleware.Chain(
+		postController.AddPostLikeController,
+		httputils.Verb(http.MethodPost),
+		authentication.LoginMiddleare(),
+	))
 }
