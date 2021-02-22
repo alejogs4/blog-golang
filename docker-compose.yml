@@ -10,7 +10,7 @@ services:
     build: .
     command: ["go", "run", "main.go"]
     volumes:
-      - .:/go/src/app
+      - .:/go/src/blog
     env_file: .env
     depends_on: 
       - database
