@@ -48,9 +48,16 @@ func TestPostEntity(t *testing.T) {
 		})
 
 		searchedLike, _ := like.CreateNewLike("second-id", "post-id", "user-id", like.Dislike, like.Active)
+		notPresentLike, _ := like.CreateNewLike("third-id", "post-id-3", "user-id-3", like.TLike, like.Active)
+
 		isPresent := post.IsLikeAlreadyDone(searchedLike)
 		if !isPresent {
 			t.Errorf("Error: Should have found like of user %v and type %v", searchedLike.UserID, searchedLike.Type.GetTypeValue())
+		}
+
+		isPresent = post.IsLikeAlreadyDone(notPresentLike)
+		if isPresent {
+			t.Errorf("Error: Should have not found like %v", notPresentLike)
 		}
 	})
 

@@ -1,6 +1,7 @@
 package like_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/alejogs4/blog/src/post/domain/like"
@@ -18,8 +19,8 @@ func TestLikeEntity(t *testing.T) {
 			t.Errorf("Error: Should have thrown error -- %s", like.ErrInvalidLikeType)
 		}
 
-		_, err = like.CreateNewLike("", "post-id", "user-id", like.Dislike, "invalid-state")
-		if err == nil {
+		_, err = like.CreateNewLike("id", "post-id", "user-id", like.Dislike, "invalid-state")
+		if err == nil || !errors.Is(err, like.ErrInvalidLikeState) {
 			t.Errorf("Error: Should have thrown error -- %s", like.ErrInvalidLikeState)
 		}
 	})
@@ -34,6 +35,11 @@ func TestLikeEntity(t *testing.T) {
 		newLike, _ := currentLike.SwitchType()
 		if newLike.Type.GetTypeValue() != like.TLike {
 			t.Errorf("Error: Switched like should be: %v got: %v", like.TLike, newLike.Type.GetTypeValue())
+		}
+
+		dislike, _ := newLike.SwitchType()
+		if dislike.Type.GetTypeValue() != like.Dislike {
+			t.Errorf("Error: Switched like should be: %v got: %v", like.Dislike, dislike.Type.GetTypeValue())
 		}
 	})
 
