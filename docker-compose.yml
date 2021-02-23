@@ -20,8 +20,6 @@ services:
       - database
     ports: 
       - 8080:8080
-    volumes: 
-      - .:/go/src/go-blog
 volumes: 
   database_data:
     driver: local

@@ -1,0 +1,32 @@
+version: "3.7"
+services: 
+  database:
+    image: postgres
+    restart: on-failure
+    env_file: .env
+    ports: 
+      - 5432:5432
+    volumes: 
+      - integration-test-data:/var/lib/postgresql/data
+    networks:
+      - integration-test-network
+  server:
+    build:
+      context: .
+      dockerfile: ./docker/test/Dockerfile.test
+    image: go-blog-test:1.0
+    volumes:
+      - .:/go/src/blog
+    networks:
+      - integration-test-network
+    env_file: .env
+    depends_on: 
+      - database
+    ports: 
+      - 8080:8080
+networks: 
+  integration-test-network:
+    driver: bridge
+volumes:
+  integration-test-data:
+    driver: local
