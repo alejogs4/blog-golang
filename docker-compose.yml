@@ -9,7 +9,9 @@ services:
     volumes: 
       - database_data:/var/lib/postgresql/data
   server:
-    build: .
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
     image: go-blog-server:1.0
     volumes:
       - .:/go/src/blog
