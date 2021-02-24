@@ -6,7 +6,7 @@ down:
 
 test:
 	docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
-	docker-compose -f docker-compose.test.yml down --volumes
+	docker-compose -f docker-compose.test.yml down
 
 test-db-up:
 	docker-compose -f docker-compose.test.yml up --build database
