@@ -1,24 +1,25 @@
 package integrationtest
 
 import (
+	"database/sql"
 	"log"
 	"os"
 	"testing"
 
 	"github.com/alejogs4/blog/src/post/domain/like"
 	"github.com/alejogs4/blog/src/post/domain/post"
-	"github.com/alejogs4/blog/src/shared/infraestructure/database"
 	"github.com/alejogs4/blog/src/shared/infraestructure/token"
 	"github.com/alejogs4/blog/src/user/domain/user"
 	"github.com/google/uuid"
+	"github.com/icrowley/fake"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func PopulateUsers() ([]user.User, error) {
-	newUserOne, _ := user.NewUser(uuid.New().String(), "Alejandro", "Garcia", "alejogs4@gmail.com", "12345", true)
-	newUserTwo, _ := user.NewUser(uuid.New().String(), "Jose", "Miranda", "josemiranda@gmail.com", "12345", true)
-	newUserThree, _ := user.NewUser(uuid.New().String(), "Miguel", "Velez", "miguelito99@gmail.com", "12345", true)
-	newUserFour, _ := user.NewUser(uuid.New().String(), "Mauricio", "Brunal Mestra", "mgbrunal@gmail.com", "12345", true)
+func PopulateUsers(db *sql.DB) ([]user.User, error) {
+	newUserOne, _ := user.NewUser(uuid.New().String(), "Alejandro", "Garcia", fake.EmailAddress(), "1234567", true)
+	newUserTwo, _ := user.NewUser(uuid.New().String(), "Jose", "Miranda", fake.EmailAddress(), "1234675", true)
+	newUserThree, _ := user.NewUser(uuid.New().String(), "Miguel", "Velez", fake.EmailAddress(), "1234567", true)
+	newUserFour, _ := user.NewUser(uuid.New().String(), "Mauricio", "Brunal Mestra", fake.EmailAddress(), "123457s", true)
 
 	users := []user.User{
 		newUserOne,
@@ -28,7 +29,7 @@ func PopulateUsers() ([]user.User, error) {
 	}
 
 	for _, currentUser := range users {
-		smt, err := database.PostgresDB.Prepare("INSERT INTO person(id, firstname, lastname, email, email_verified, password) VALUES($1, $2, $3, $4, $5, $6)")
+		smt, err := db.Prepare("INSERT INTO person(id, firstname, lastname, email, email_verified, password) VALUES($1, $2, $3, $4, $5, $6)")
 		if err != nil {
 			return []user.User{}, err
 		}
@@ -54,7 +55,7 @@ func PopulateUsers() ([]user.User, error) {
 	return users, nil
 }
 
-func PopulatePosts(users []user.User) ([]post.Post, error) {
+func PopulatePosts(users []user.User, db *sql.DB) ([]post.Post, error) {
 	posts := []post.Post{
 		{ID: uuid.New().String(), UserID: users[0].GetID(), Title: "Title 1", Content: "Content 1", Picture: "img/route.jpg", Tags: []post.Tag{}, Comments: []post.Comment{}, Likes: []like.Like{}},
 		{ID: uuid.New().String(), UserID: users[1].GetID(), Title: "Title 2", Content: "Content 2", Picture: "img/route.jpg", Tags: []post.Tag{}, Comments: []post.Comment{}, Likes: []like.Like{}},
@@ -62,7 +63,7 @@ func PopulatePosts(users []user.User) ([]post.Post, error) {
 	}
 
 	for _, currentPost := range posts {
-		smt, err := database.PostgresDB.Prepare("INSERT INTO post(id, person_id, title, content, picture) VALUES($1, $2, $3, $4, $5)")
+		smt, err := db.Prepare("INSERT INTO post(id, person_id, title, content, picture) VALUES($1, $2, $3, $4, $5)")
 		if err != nil {
 			return []post.Post{}, err
 		}
@@ -76,27 +77,13 @@ func PopulatePosts(users []user.User) ([]post.Post, error) {
 	return posts, nil
 }
 
-func truncateDatabase() error {
-	_, err := database.PostgresDB.Exec("TRUNCATE TABLE person, post, comment, post_like, tag, post_tag")
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func SetupDatabaseForTesting(t *testing.M) int {
+func SetupDatabaseForTesting(t *testing.M, db *sql.DB) int {
 	enviroment := os.Getenv("ENV")
 
 	defer func() {
 		if enviroment == "integration_test" {
-			err := truncateDatabase()
-			if err != nil {
-				log.Fatalf("Error: Error truncating database %s", err)
-				os.Exit(1)
-			}
 
-			if err := database.PostgresDB.Close(); err != nil {
+			if err := db.Close(); err != nil {
 				log.Fatalf("Error: Error closing database %s", err)
 				os.Exit(1)
 			}
@@ -106,11 +93,6 @@ func SetupDatabaseForTesting(t *testing.M) int {
 	if enviroment == "integration_test" {
 		if err := token.LoadCertificates("../../../../certificates/app.rsa", "../../../../certificates/app.rsa.pub"); err != nil {
 			log.Fatalf("Error: Error initializing token certificates %s", err)
-			return 1
-		}
-
-		if err := database.InitDatabase(); err != nil {
-			log.Fatalf("Error: Error initializing database %s", err)
 			return 1
 		}
 	}

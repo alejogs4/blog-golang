@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/alejogs4/blog/src/shared/infraestructure/database"
 	"github.com/alejogs4/blog/src/shared/infraestructure/httputils"
 	"github.com/alejogs4/blog/src/shared/infraestructure/middleware"
 	"github.com/alejogs4/blog/src/user/domain/user"
@@ -15,7 +14,7 @@ import (
 )
 
 func prepareRegisterRequest(newUser user.User) (*http.Request, *httptest.ResponseRecorder, http.HandlerFunc) {
-	userController := userhttpport.NewUserController(userrepository.NewUserRepository(database.PostgresDB))
+	userController := userhttpport.NewUserController(userrepository.NewUserRepository(testDatabase))
 
 	userBody := []byte(fmt.Sprintf(
 		`{"email": "%v", "firstname": "%v", "lastname": "%v", "password": "%v"}`,
@@ -30,7 +29,7 @@ func prepareRegisterRequest(newUser user.User) (*http.Request, *httptest.Respons
 }
 
 func prepareLoginRequest(email, password string) (*http.Request, *httptest.ResponseRecorder, http.HandlerFunc) {
-	userController := userhttpport.NewUserController(userrepository.NewUserRepository(database.PostgresDB))
+	userController := userhttpport.NewUserController(userrepository.NewUserRepository(testDatabase))
 	loginBody := []byte(fmt.Sprintf(
 		`{"email": "%v", "password": "%v"}`,
 		email, password,

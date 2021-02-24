@@ -27,6 +27,27 @@ func InitDatabase() error {
 	return err
 }
 
+func InitTestDatabase() (*sql.DB, error) {
+	databaseUser := os.Getenv("POSTGRES_USER")
+	databaseName := os.Getenv("POSTGRES_DB")
+
+	postgresInformation := fmt.Sprintf("host=%s port=%d user=%s "+
+		"dbname=%s sslmode=disable", host, port, databaseUser, databaseName)
+
+	testDB, err := sql.Open("postgres", postgresInformation)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = testDB.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	return testDB, nil
+}
+
 func initDatabase() error {
 	databaseUser := os.Getenv("POSTGRES_USER")
 	databaseName := os.Getenv("POSTGRES_DB")

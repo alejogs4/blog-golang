@@ -1,27 +1,42 @@
 package userhttpport_test
 
 import (
+	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"testing"
 
+	"github.com/alejogs4/blog/src/shared/infraestructure/database"
 	integrationtest "github.com/alejogs4/blog/src/shared/infraestructure/integrationTest"
 	"github.com/alejogs4/blog/src/shared/infraestructure/token"
 	"github.com/alejogs4/blog/src/user/domain/user"
 	userhttpport "github.com/alejogs4/blog/src/user/infraestructure/userHttpPort"
+	"github.com/icrowley/fake"
 	_ "github.com/lib/pq"
 )
 
+var testDatabase *sql.DB
+
 func TestMain(t *testing.M) {
-	os.Exit(integrationtest.SetupDatabaseForTesting(t))
+	var err error
+	testDatabase, err = database.InitTestDatabase()
+
+	if err != nil {
+		log.Fatalf("Error initializing db - %s", err)
+		os.Exit(1)
+		return
+	}
+
+	os.Exit(integrationtest.SetupDatabaseForTesting(t, testDatabase))
 }
 
 func TestRegisterLoginIntegration(t *testing.T) {
 	t.Run("Should register a new user meanwhile is right data and after allow user login", func(t *testing.T) {
 		t.Parallel()
 
-		newUser, _ := user.NewUser("id", "Jose", "Velez", "josevelez99@gmail.com", "123456", false)
+		newUser, _ := user.NewUser("id", "Jose", "Velez", fake.EmailAddress(), "123456", false)
 		request, response, registerRoute := prepareRegisterRequest(newUser)
 		registerRoute(response, request)
 
@@ -65,7 +80,7 @@ func TestRegisterLoginIntegration(t *testing.T) {
 	t.Run("Should send a 400 error if user email or password are wrong", func(t *testing.T) {
 		t.Parallel()
 
-		newUser, _ := user.NewUser("id", "Alejandro", "Garcia", "alejogs5@gmail.com", "123456", false)
+		newUser, _ := user.NewUser("id", "Alejandro", "Garcia", fake.EmailAddress(), "123456", false)
 		request, response, registerRoute := prepareRegisterRequest(newUser)
 		registerRoute(response, request)
 
