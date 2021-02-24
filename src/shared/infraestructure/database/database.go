@@ -28,6 +28,11 @@ func InitDatabase() error {
 }
 
 func InitTestDatabase() (*sql.DB, error) {
+	enviroment := os.Getenv("ENV")
+	if enviroment != "integration_test" {
+		return nil, nil
+	}
+
 	databaseUser := os.Getenv("POSTGRES_USER")
 	databaseName := os.Getenv("POSTGRES_DB")
 
