@@ -8,7 +8,7 @@ import (
 	"github.com/alejogs4/blog/src/user/domain/user"
 )
 
-func TestUserEntity(t *testing.T) {
+func TestUserEntityUnit(t *testing.T) {
 	t.Run("Should throw an error if any field empty", func(t *testing.T) {
 		_, err := user.NewUser(" ", "alejandro", "Garcia", "email-random", "this is my pass", false)
 		if err == nil {

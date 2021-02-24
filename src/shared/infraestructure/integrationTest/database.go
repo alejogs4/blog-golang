@@ -1,9 +1,14 @@
 package integrationtest
 
 import (
+	"log"
+	"os"
+	"testing"
+
 	"github.com/alejogs4/blog/src/post/domain/like"
 	"github.com/alejogs4/blog/src/post/domain/post"
 	"github.com/alejogs4/blog/src/shared/infraestructure/database"
+	"github.com/alejogs4/blog/src/shared/infraestructure/token"
 	"github.com/alejogs4/blog/src/user/domain/user"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -71,11 +76,44 @@ func PopulatePosts(users []user.User) ([]post.Post, error) {
 	return posts, nil
 }
 
-func TruncateDatabase() error {
+func truncateDatabase() error {
 	_, err := database.PostgresDB.Exec("TRUNCATE TABLE person, post, comment, post_like, tag, post_tag")
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func SetupDatabaseForTesting(t *testing.M) int {
+	enviroment := os.Getenv("ENV")
+
+	defer func() {
+		if enviroment == "integration_test" {
+			err := truncateDatabase()
+			if err != nil {
+				log.Fatalf("Error: Error truncating database %s", err)
+				os.Exit(1)
+			}
+
+			if err := database.PostgresDB.Close(); err != nil {
+				log.Fatalf("Error: Error closing database %s", err)
+				os.Exit(1)
+			}
+		}
+	}()
+
+	if enviroment == "integration_test" {
+		if err := token.LoadCertificates("../../../../certificates/app.rsa", "../../../../certificates/app.rsa.pub"); err != nil {
+			log.Fatalf("Error: Error initializing token certificates %s", err)
+			return 1
+		}
+
+		if err := database.InitDatabase(); err != nil {
+			log.Fatalf("Error: Error initializing database %s", err)
+			return 1
+		}
+	}
+
+	return t.Run()
 }

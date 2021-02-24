@@ -10,7 +10,7 @@ import (
 	"github.com/alejogs4/blog/src/shared/infraestructure/middleware"
 )
 
-func TestLoginMiddleware(t *testing.T) {
+func TestLoginMiddlewareUnit(t *testing.T) {
 	handler := func(response http.ResponseWriter, request *http.Request) {
 
 	}

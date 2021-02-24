@@ -10,7 +10,7 @@ import (
 	"github.com/alejogs4/blog/src/post/domain/post"
 )
 
-func TestPostEntity(t *testing.T) {
+func TestPostEntityUnit(t *testing.T) {
 	t.Run("Post create should throws error if is created with empty fields", func(t *testing.T) {
 		_, err := post.CreateNewPost("", "", "any title", "content", "picture", []post.Comment{}, []post.Tag{}, []like.Like{})
 		if err == nil {
@@ -135,7 +135,7 @@ func TestCommentEntity(t *testing.T) {
 	})
 }
 
-func TestPostDTO(t *testing.T) {
+func TestPostDTOUnit(t *testing.T) {
 	t.Run("Should return a proper instance of PostDTO", func(t *testing.T) {
 		rawPost, _ := post.CreateNewPost("123", "123", "title", "content", "picture", []post.Comment{}, []post.Tag{}, []like.Like{})
 		postDTO := post.ToPostsDTO(rawPost, 12, 23, 3)
@@ -156,7 +156,7 @@ func TestPostDTO(t *testing.T) {
 	})
 }
 
-func TestTagEntity(t *testing.T) {
+func TestTagEntityUnit(t *testing.T) {
 	t.Run("Should throw an error if either id or content are empty", func(t *testing.T) {
 		_, err := post.CreateNewTag("", "")
 		if err == nil {

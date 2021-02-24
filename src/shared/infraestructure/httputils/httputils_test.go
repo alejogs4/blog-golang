@@ -9,7 +9,7 @@ import (
 	"github.com/alejogs4/blog/src/shared/infraestructure/middleware"
 )
 
-func TestVerbMiddleware(t *testing.T) {
+func TestVerbMiddlewareUnit(t *testing.T) {
 	bareHandler := func(response http.ResponseWriter, request *http.Request) {
 		httputils.DispatchNewResponse(response, map[string]string{}, http.StatusOK)
 	}

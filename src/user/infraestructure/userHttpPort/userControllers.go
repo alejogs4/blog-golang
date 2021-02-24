@@ -9,12 +9,22 @@ import (
 	"github.com/alejogs4/blog/src/shared/infraestructure/token"
 	usercommands "github.com/alejogs4/blog/src/user/application/userCommands"
 	"github.com/alejogs4/blog/src/user/domain/user"
-	userrepository "github.com/alejogs4/blog/src/user/infraestructure/userRepository"
 )
 
-var userCommand = usercommands.NewUserCommands(userrepository.PostgresUserRepository{})
+type LoginResponse struct {
+	User  user.UserDTO `json:"user"`
+	Token string       `json:"token"`
+}
 
-func loginHandler(response http.ResponseWriter, request *http.Request) {
+type userControllers struct {
+	userCommand usercommands.UserCommands
+}
+
+func NewUserController(userRepository user.UserRepository) userControllers {
+	return userControllers{userCommand: usercommands.NewUserCommands(userRepository)}
+}
+
+func (controller userControllers) LoginHandler(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 
 	var loginInfo struct {
@@ -28,7 +38,7 @@ func loginHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	user, err := userCommand.Login(loginInfo.Email, loginInfo.Password)
+	user, err := controller.userCommand.Login(loginInfo.Email, loginInfo.Password)
 	if err != nil {
 		httpError := mapUserErrorToHttpError(err)
 		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
@@ -42,18 +52,11 @@ func loginHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	userResponse := map[string]map[string]interface{}{ // This sucks
-		"data": {
-			"user":    user,
-			"message": "Ok",
-			"token":   userToken,
-		},
-	}
-
-	httputils.DispatchNewResponse(response, userResponse, http.StatusOK)
+	userResponse := LoginResponse{User: user, Token: userToken}
+	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(userResponse, "Ok"), http.StatusOK)
 }
 
-func registerHandler(response http.ResponseWriter, request *http.Request) {
+func (controller userControllers) RegisterHandler(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 
 	var newUser struct {
@@ -68,7 +71,7 @@ func registerHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	userDTO, err := userCommand.Register(newUser.Email, newUser.Password, newUser.Firstname, newUser.Lastname)
+	userDTO, err := controller.userCommand.Register(newUser.Email, newUser.Password, newUser.Firstname, newUser.Lastname)
 	if err != nil {
 		fmt.Println(err)
 		httpError := mapUserErrorToHttpError(err)
@@ -76,5 +79,5 @@ func registerHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(userDTO, "Ok"), http.StatusOK)
+	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(userDTO, "Ok"), http.StatusCreated)
 }

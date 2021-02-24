@@ -19,7 +19,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func TestUnitCreatePostController(t *testing.T) {
+func TestUnitCreatePostControllerUnit(t *testing.T) {
 
 	t.Run("Should return a bad request code if there are missing field", func(t *testing.T) {
 		response, request, controller := preparePostRequest("this is the title", "", "1,2")
@@ -59,7 +59,7 @@ func TestUnitCreatePostController(t *testing.T) {
 	})
 }
 
-func TestUnitAddLikeController(t *testing.T) {
+func TestUnitAddLikeControllerUnit(t *testing.T) {
 	t.Run("Should throw a bad request petition if type property is not sent properly", func(t *testing.T) {
 		response, request, controller := prepareAddLikeRequest("invalid-type")
 		controller.AddPostLikeController(response, request)

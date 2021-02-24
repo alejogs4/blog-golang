@@ -4,15 +4,20 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/alejogs4/blog/src/shared/infraestructure/database"
 	"github.com/alejogs4/blog/src/user/domain/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type PostgresUserRepository struct{}
+type PostgresUserRepository struct {
+	db *sql.DB
+}
+
+func NewUserRepository(db *sql.DB) PostgresUserRepository {
+	return PostgresUserRepository{db: db}
+}
 
 func (repository PostgresUserRepository) Login(email, password string) (user.UserDTO, error) {
-	result := database.PostgresDB.QueryRow(
+	result := repository.db.QueryRow(
 		"SELECT id, firstname, lastname, email_verified, password FROM person WHERE email=$1",
 		email,
 	)
@@ -44,7 +49,7 @@ func (repository PostgresUserRepository) Login(email, password string) (user.Use
 }
 
 func (repository PostgresUserRepository) Register(user user.User) error {
-	_, err := database.PostgresDB.Exec(
+	_, err := repository.db.Exec(
 		"INSERT INTO person(id, firstname, lastname, email, email_verified, password) VALUES($1, $2, $3, $4, $5, $6)",
 		user.GetID(), user.GetFirstname(), user.GetLastname(), user.GetEmail(), user.GetEmailVerified(), user.GetPassword(),
 	)

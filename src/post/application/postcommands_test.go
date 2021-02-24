@@ -9,7 +9,7 @@ import (
 	"github.com/alejogs4/blog/src/post/domain/post"
 )
 
-func TestPostCommandsCreateNewPost(t *testing.T) {
+func TestPostCommandsCreateNewPostUnit(t *testing.T) {
 	postCommands := application.NewPostCommands(postRepositoryMock{})
 
 	t.Run("Should return nil if all fields are correctly provided", func(t *testing.T) {
@@ -33,7 +33,7 @@ func TestPostCommandsCreateNewPost(t *testing.T) {
 	})
 }
 
-func TestPostCommandsCreateNewComment(t *testing.T) {
+func TestPostCommandsCreateNewCommentUnit(t *testing.T) {
 	postCommands := application.NewPostCommands(postRepositoryMock{})
 	t.Run("Should return ErrBadCommentContent if not all fields were provided", func(t *testing.T) {
 		err := postCommands.CreateNewComment("  ", " ", "content")
@@ -56,7 +56,7 @@ func TestPostCommandsCreateNewComment(t *testing.T) {
 	})
 }
 
-func TestPostCommandsAddLike(t *testing.T) {
+func TestPostCommandsAddLikeUnit(t *testing.T) {
 	t.Run("Should return an error if like type is not either like or dislike", func(t *testing.T) {
 		postCommands := application.NewPostCommands(postRepositoryMock{})
 		err := postCommands.AddLike("user-id", "post-id", "invalid-like-type")
@@ -140,7 +140,7 @@ func TestPostCommandsAddLike(t *testing.T) {
 	})
 }
 
-func TestRemovePostComment(t *testing.T) {
+func TestRemovePostCommentUnit(t *testing.T) {
 	t.Run("Should return error if user to remove the post is no the post owner", func(t *testing.T) {
 		mockPostRepository := postRepositoryMock{
 			ReturnedComment: post.Comment{

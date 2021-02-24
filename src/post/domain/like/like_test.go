@@ -7,7 +7,7 @@ import (
 	"github.com/alejogs4/blog/src/post/domain/like"
 )
 
-func TestLikeEntity(t *testing.T) {
+func TestLikeEntityUnit(t *testing.T) {
 	t.Run("Should throw an error if right content is not provided", func(t *testing.T) {
 		_, err := like.CreateNewLike("", "post-id", "user-id", like.Dislike, like.Active)
 		if err == nil {

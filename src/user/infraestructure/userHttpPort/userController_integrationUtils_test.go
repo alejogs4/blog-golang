@@ -1,0 +1,44 @@
+package userhttpport_test
+
+import (
+	"bytes"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+
+	"github.com/alejogs4/blog/src/shared/infraestructure/database"
+	"github.com/alejogs4/blog/src/shared/infraestructure/httputils"
+	"github.com/alejogs4/blog/src/shared/infraestructure/middleware"
+	"github.com/alejogs4/blog/src/user/domain/user"
+	userhttpport "github.com/alejogs4/blog/src/user/infraestructure/userHttpPort"
+	userrepository "github.com/alejogs4/blog/src/user/infraestructure/userRepository"
+)
+
+func prepareRegisterRequest(newUser user.User) (*http.Request, *httptest.ResponseRecorder, http.HandlerFunc) {
+	userController := userhttpport.NewUserController(userrepository.NewUserRepository(database.PostgresDB))
+
+	userBody := []byte(fmt.Sprintf(
+		`{"email": "%v", "firstname": "%v", "lastname": "%v", "password": "%v"}`,
+		newUser.GetEmail(), newUser.GetFirstname(), newUser.GetLastname(), newUser.GetPassword(),
+	))
+
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/register", bytes.NewBuffer(userBody))
+	response := httptest.NewRecorder()
+
+	registerRoute := middleware.Chain(userController.RegisterHandler, httputils.Verb(http.MethodPost))
+	return request, response, registerRoute
+}
+
+func prepareLoginRequest(email, password string) (*http.Request, *httptest.ResponseRecorder, http.HandlerFunc) {
+	userController := userhttpport.NewUserController(userrepository.NewUserRepository(database.PostgresDB))
+	loginBody := []byte(fmt.Sprintf(
+		`{"email": "%v", "password": "%v"}`,
+		email, password,
+	))
+
+	loginRequest := httptest.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewBuffer(loginBody))
+	loginResponse := httptest.NewRecorder()
+	loginRoute := middleware.Chain(userController.LoginHandler, httputils.Verb(http.MethodPost))
+
+	return loginRequest, loginResponse, loginRoute
+}
