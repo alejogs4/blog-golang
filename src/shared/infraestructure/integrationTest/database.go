@@ -79,21 +79,20 @@ func PopulatePosts(users []user.User, db *sql.DB) ([]post.Post, error) {
 
 func SetupDatabaseForTesting(t *testing.M, db *sql.DB) int {
 	enviroment := os.Getenv("ENV")
+	if enviroment != "integration_test" {
+		return t.Run()
+	}
 
 	defer func() {
-		if enviroment == "integration_test" {
-			if err := db.Close(); err != nil {
-				log.Fatalf("Error: Error closing database %s", err)
-				os.Exit(1)
-			}
+		if err := db.Close(); err != nil {
+			log.Fatalf("Error: Error closing database %s", err)
+			os.Exit(1)
 		}
 	}()
 
-	if enviroment == "integration_test" {
-		if err := token.LoadCertificates("../../../../certificates/app.rsa", "../../../../certificates/app.rsa.pub"); err != nil {
-			log.Fatalf("Error: Error initializing token certificates %s", err)
-			return 1
-		}
+	if err := token.LoadCertificates("../../../../certificates/app.rsa", "../../../../certificates/app.rsa.pub"); err != nil {
+		log.Fatalf("Error: Error initializing token certificates %s", err)
+		return 1
 	}
 
 	return t.Run()
