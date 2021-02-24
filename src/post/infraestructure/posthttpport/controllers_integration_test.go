@@ -17,6 +17,7 @@ import (
 	"github.com/alejogs4/blog/src/shared/infraestructure/httputils"
 	integrationtest "github.com/alejogs4/blog/src/shared/infraestructure/integrationTest"
 	"github.com/alejogs4/blog/src/shared/infraestructure/middleware"
+	"github.com/gorilla/mux"
 
 	_ "github.com/lib/pq"
 )
@@ -60,6 +61,10 @@ func TestPostGetAllIntegration(t *testing.T) {
 
 	getAllPostsRouteController(response, request)
 
+	if response.Code != http.StatusOK {
+		t.Errorf("Error: Expected status code %d, Received status code %d", http.StatusOK, response.Code)
+	}
+
 	var postsInDB struct {
 		Posts []post.Post `json:"data"`
 	}
@@ -77,5 +82,44 @@ func TestPostGetAllIntegration(t *testing.T) {
 		if postFound == false {
 			t.Errorf("Error: Post %v should have been returned", currentPost)
 		}
+	}
+}
+
+func TestGetByIDIntegration(t *testing.T) {
+	t.Parallel()
+
+	users, err := integrationtest.PopulateUsers(testDatabase)
+	if err != nil {
+		t.Errorf("Error: Error inserting users %s", err)
+	}
+
+	posts, err := integrationtest.PopulatePosts(users, testDatabase)
+	if err != nil {
+		t.Errorf("Error: Error inserting posts %s", err)
+	}
+
+	lookPost := posts[0]
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/post/{id}", nil)
+	response := httptest.NewRecorder()
+	withPostIDRequest := mux.SetURLVars(request, map[string]string{"id": lookPost.ID})
+
+	postCommands := application.NewPostCommands(postrepository.NewPostgresRepository(testDatabase))
+	postQueries := application.NewPostQueries(postrepository.NewPostgresRepository(testDatabase))
+
+	postsController := posthttpport.NewPostControllers(postCommands, postQueries)
+	getAllPostsRouteController := middleware.Chain(postsController.GetPostByIDController, httputils.Verb(http.MethodGet))
+	getAllPostsRouteController(response, withPostIDRequest)
+
+	if response.Code != http.StatusOK {
+		t.Errorf("Error: Expected status code %d, Received status code %d", http.StatusOK, response.Code)
+	}
+
+	var gotResponse struct {
+		Post post.Post `json:"data"`
+	}
+	json.NewDecoder(response.Body).Decode(&gotResponse)
+
+	if gotResponse.Post.ID != lookPost.ID {
+		t.Errorf("Error: Expected post %v, Received post %v", lookPost.ID, gotResponse.Post.ID)
 	}
 }

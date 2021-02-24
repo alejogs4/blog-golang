@@ -82,7 +82,6 @@ func SetupDatabaseForTesting(t *testing.M, db *sql.DB) int {
 
 	defer func() {
 		if enviroment == "integration_test" {
-
 			if err := db.Close(); err != nil {
 				log.Fatalf("Error: Error closing database %s", err)
 				os.Exit(1)
