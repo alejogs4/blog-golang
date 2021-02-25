@@ -123,7 +123,10 @@ func TestCommentEntity(t *testing.T) {
 			t.Errorf("Error: comment state should be initially %v", post.ActiveComment)
 		}
 
-		comment.RemoveComment()
+		if err := comment.RemoveComment(); err != nil {
+			t.Errorf("Error: error removing comment %s", err)
+		}
+
 		if comment.State != post.RemovedComment {
 			t.Errorf("Error: comment must have changed to %v", post.RemovedComment)
 		}
