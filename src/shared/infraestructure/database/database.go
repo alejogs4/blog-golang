@@ -7,8 +7,8 @@ import (
 	"sync"
 )
 
-const (
-	host = "database"
+var (
+	host = os.Getenv("DATABASE_HOST")
 	port = 5432
 )
 
