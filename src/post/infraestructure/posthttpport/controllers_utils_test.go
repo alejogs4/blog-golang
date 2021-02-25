@@ -11,7 +11,10 @@ import (
 
 	"github.com/alejogs4/blog/src/post/application"
 	"github.com/alejogs4/blog/src/post/domain/post"
+	"github.com/alejogs4/blog/src/post/infraestructure/posthttpport"
 	posthttppost "github.com/alejogs4/blog/src/post/infraestructure/posthttpport"
+	"github.com/alejogs4/blog/src/shared/infraestructure/httputils"
+	"github.com/alejogs4/blog/src/shared/infraestructure/middleware"
 	"github.com/alejogs4/blog/src/user/domain/user"
 	"github.com/gorilla/mux"
 )
@@ -39,12 +42,12 @@ func preparePostRequest(title, content, tags string, postRespository post.PostRe
 	return response, request.WithContext(ctx), controller
 }
 
-func prepareAddLikeRequest(sentType string) (*httptest.ResponseRecorder, *http.Request, posthttppost.PostControllers) {
+func prepareAddLikeRequest(sentType, postID string, postRespository post.PostRepository) (*httptest.ResponseRecorder, *http.Request, posthttppost.PostControllers) {
 	requestBody := []byte(fmt.Sprintf(`{"type": "%v"}`, sentType))
 
-	request := httptest.NewRequest(http.MethodPost, "/api/v1/post/123/like", bytes.NewBuffer(requestBody))
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/post/{id}/like", bytes.NewBuffer(requestBody))
 	response := httptest.NewRecorder()
-	withPostIDRequest := mux.SetURLVars(request, map[string]string{"id": "123"})
+	withPostIDRequest := mux.SetURLVars(request, map[string]string{"id": postID})
 
 	request.Header.Set("Content-Type", "application/json")
 
@@ -53,10 +56,32 @@ func prepareAddLikeRequest(sentType string) (*httptest.ResponseRecorder, *http.R
 	ctx := context.WithValue(withPostIDRequest.Context(), "user", userDTO)
 
 	// Here I just noticed that even though I will only use a command I need to pass it a query use case instance, so this could be refactored
-	mockRepository := mockPostRepositoryOK{}
-	var postCommands application.PostCommands = application.NewPostCommands(mockRepository)
-	var postQueries application.PostQueries = application.NewPostQueries(mockRepository)
+	var postCommands application.PostCommands = application.NewPostCommands(postRespository)
+	var postQueries application.PostQueries = application.NewPostQueries(postRespository)
 	controller := posthttppost.NewPostControllers(postCommands, postQueries)
 
 	return response, request.WithContext(ctx), controller
+}
+
+func prepareGetAllPostsRequest(postrepository post.PostRepository) (*httptest.ResponseRecorder, *http.Request, http.HandlerFunc) {
+	getAllRequest := httptest.NewRequest(http.MethodGet, "/api/v1/posts", nil)
+	getAllResponse := httptest.NewRecorder()
+
+	postCommands := application.NewPostCommands(postrepository)
+	postQueries := application.NewPostQueries(postrepository)
+
+	postsController := posthttpport.NewPostControllers(postCommands, postQueries)
+	getAllPostsRouteController := middleware.Chain(postsController.GetAllPostController, httputils.Verb(http.MethodGet))
+
+	return getAllResponse, getAllRequest, getAllPostsRouteController
+}
+
+func existPost(predicate func(post.PostsDTO) bool, posts []post.PostsDTO) bool {
+	for _, storedPost := range posts {
+		if predicate(storedPost) {
+			return true
+		}
+	}
+
+	return false
 }

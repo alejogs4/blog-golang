@@ -53,9 +53,8 @@ func PopulateUsers(db *sql.DB) ([]user.User, error) {
 
 func PopulatePosts(users []user.User, db *sql.DB) ([]post.Post, error) {
 	posts := []post.Post{
-		{ID: uuid.New().String(), UserID: users[0].GetID(), Title: "Title 1", Content: "Content 1", Picture: "img/route.jpg", Tags: []post.Tag{}, Comments: []post.Comment{}, Likes: []like.Like{}},
-		{ID: uuid.New().String(), UserID: users[1].GetID(), Title: "Title 2", Content: "Content 2", Picture: "img/route.jpg", Tags: []post.Tag{}, Comments: []post.Comment{}, Likes: []like.Like{}},
-		{ID: uuid.New().String(), UserID: users[1].GetID(), Title: "Title 3", Content: "Content 3", Picture: "img/route.jpg", Tags: []post.Tag{}, Comments: []post.Comment{}, Likes: []like.Like{}},
+		{ID: uuid.New().String(), UserID: users[0].GetID(), Title: fake.Title(), Content: "Content 1", Picture: "img/route.jpg", Tags: []post.Tag{}, Comments: []post.Comment{}, Likes: []like.Like{}},
+		{ID: uuid.New().String(), UserID: users[1].GetID(), Title: fake.Title(), Content: "Content 2", Picture: "img/route.jpg", Tags: []post.Tag{}, Comments: []post.Comment{}, Likes: []like.Like{}},
 	}
 
 	for _, currentPost := range posts {

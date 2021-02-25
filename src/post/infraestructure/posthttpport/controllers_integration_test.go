@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/alejogs4/blog/src/post/application"
+	"github.com/alejogs4/blog/src/post/domain/like"
 	"github.com/alejogs4/blog/src/post/domain/post"
 	"github.com/alejogs4/blog/src/post/infraestructure/posthttpport"
 	"github.com/alejogs4/blog/src/post/infraestructure/postrepository"
@@ -22,6 +22,7 @@ import (
 	"github.com/alejogs4/blog/src/shared/infraestructure/middleware"
 	userhttpport "github.com/alejogs4/blog/src/user/infraestructure/userHttpPort"
 	"github.com/gorilla/mux"
+	"github.com/icrowley/fake"
 
 	_ "github.com/lib/pq"
 )
@@ -54,15 +55,7 @@ func TestPostGetAllIntegration(t *testing.T) {
 		t.Errorf("Error: Error inserting posts %s", err)
 	}
 
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/posts", nil)
-	response := httptest.NewRecorder()
-
-	postCommands := application.NewPostCommands(postrepository.NewPostgresRepository(testDatabase))
-	postQueries := application.NewPostQueries(postrepository.NewPostgresRepository(testDatabase))
-
-	postsController := posthttpport.NewPostControllers(postCommands, postQueries)
-	getAllPostsRouteController := middleware.Chain(postsController.GetAllPostController, httputils.Verb(http.MethodGet))
-
+	response, request, getAllPostsRouteController := prepareGetAllPostsRequest(postrepository.NewPostgresRepository(testDatabase))
 	getAllPostsRouteController(response, request)
 
 	if response.Code != http.StatusOK {
@@ -155,7 +148,7 @@ func TestCreatePostIntegration(t *testing.T) {
 	}
 
 	// Tests petition when is logged, it's mean that token is send
-	postTitle := fmt.Sprintf("Title for test purpose %d", rand.Int())
+	postTitle := fake.Title()
 	createLoggedResponse, createLoggedRequest, postLoggedController := preparePostRequest(
 		postTitle,
 		"content",
@@ -176,31 +169,145 @@ func TestCreatePostIntegration(t *testing.T) {
 		t.Errorf("Error: Expected status code %d, Received status code %d", http.StatusCreated, createLoggedResponse.Code)
 	}
 	// Get all posts
-	getAllRequest := httptest.NewRequest(http.MethodGet, "/api/v1/posts", nil)
-	getAllResponse := httptest.NewRecorder()
-
-	postCommands := application.NewPostCommands(postrepository.NewPostgresRepository(testDatabase))
-	postQueries := application.NewPostQueries(postrepository.NewPostgresRepository(testDatabase))
-
-	postsController := posthttpport.NewPostControllers(postCommands, postQueries)
-	getAllPostsRouteController := middleware.Chain(postsController.GetAllPostController, httputils.Verb(http.MethodGet))
-
+	getAllResponse, getAllRequest, getAllPostsRouteController := prepareGetAllPostsRequest(postrepository.NewPostgresRepository(testDatabase))
 	getAllPostsRouteController(getAllResponse, getAllRequest)
 
 	var gotResponse struct {
-		Posts []post.Post `json:"data"`
+		Posts []post.PostsDTO `json:"data"`
 	}
 	json.NewDecoder(getAllResponse.Body).Decode(&gotResponse)
 
-	foundPost := false
-	for _, createdPost := range gotResponse.Posts {
-		if createdPost.Title == postTitle {
-			foundPost = true
-			break
-		}
-	}
+	foundPost := existPost(func(createdPost post.PostsDTO) bool {
+		return createdPost.Title == postTitle
+	}, gotResponse.Posts)
 
 	if foundPost == false {
 		t.Errorf("Error: Post with title: %v, it was not created", postTitle)
+	}
+}
+
+func TestAddLikeIntegration(t *testing.T) {
+	t.Parallel()
+
+	users, err := integrationtest.PopulateUsers(testDatabase)
+	if err != nil {
+		t.Errorf("Error: error inserting users %s", err)
+	}
+
+	posts, err := integrationtest.PopulatePosts(users, testDatabase)
+	if err != nil {
+		t.Errorf("Error: error inserting posts %s", err)
+	}
+
+	firstUser := users[0]
+
+	loginRequest, loginResponse, loginHandler := integrationtest.PrepareLoginRequest(
+		firstUser.GetEmail(),
+		firstUser.GetPassword(),
+		testDatabase,
+	)
+
+	loginHandler(loginResponse, loginRequest)
+	var loginResponseBody struct {
+		Data    userhttpport.LoginResponse `json:"data"`
+		Message string                     `json:"message"`
+	}
+
+	err = json.NewDecoder(loginResponse.Body).Decode(&loginResponseBody)
+	if err != nil {
+		t.Errorf("Error: error deconding response body %s", err)
+	}
+
+	firstPost := posts[0]
+	postgresRepository := postrepository.NewPostgresRepository(testDatabase)
+	addLikeResponse, unloggedAddLikeRequest, unLoggedAddLikeHandler := prepareAddLikeRequest(like.TLike, firstPost.ID, postgresRepository)
+
+	addLikeHandler := middleware.Chain(
+		unLoggedAddLikeHandler.AddPostLikeController,
+		httputils.Verb(http.MethodPost),
+		authentication.LoginMiddleare(),
+	)
+	addLikeHandler(addLikeResponse, unloggedAddLikeRequest)
+
+	if addLikeResponse.Code != http.StatusUnauthorized {
+		t.Errorf("Error: Expected status code %d, Received status code %d", http.StatusUnauthorized, addLikeResponse.Code)
+	}
+
+	addLikeResponse, loggedAddLikeRequest, _ := prepareAddLikeRequest(like.TLike, firstPost.ID, postgresRepository)
+	loggedAddLikeRequest.Header.Set("Authorization", "Bearer "+loginResponseBody.Data.Token)
+	addLikeHandler(addLikeResponse, loggedAddLikeRequest)
+
+	if addLikeResponse.Code != http.StatusCreated {
+		t.Errorf("Error: Expected status code %d, Received status code %d", http.StatusCreated, addLikeResponse.Code)
+	}
+
+	// Get post
+	getAllResponse, getAllRequest, getAllHandler := prepareGetAllPostsRequest(postrepository.NewPostgresRepository(testDatabase))
+	getAllHandler(getAllResponse, getAllRequest)
+
+	var gotResponse struct {
+		Posts []post.PostsDTO `json:"data"`
+	}
+	json.NewDecoder(getAllResponse.Body).Decode(&gotResponse)
+
+	foundLikedPost := existPost(func(storedPost post.PostsDTO) bool {
+		return storedPost.ID == firstPost.ID && storedPost.Likes == 1
+	}, gotResponse.Posts)
+
+	if foundLikedPost == false {
+		t.Errorf("Error: Post with id %v and liked was not found", firstPost.ID)
+	}
+
+	// New like
+	addLikeResponse, loggedRemoveLikeRequest, _ := prepareAddLikeRequest(like.TLike, firstPost.ID, postgresRepository)
+	loggedRemoveLikeRequest.Header.Set("Authorization", "Bearer "+loginResponseBody.Data.Token)
+	addLikeHandler(addLikeResponse, loggedRemoveLikeRequest)
+
+	getAllResponse, getAllRequest, getAllHandler = prepareGetAllPostsRequest(postrepository.NewPostgresRepository(testDatabase))
+	getAllHandler(getAllResponse, getAllRequest)
+
+	json.NewDecoder(getAllResponse.Body).Decode(&gotResponse)
+
+	foundRemovedPostLike := existPost(func(storedPost post.PostsDTO) bool {
+		return storedPost.ID == firstPost.ID && storedPost.Likes == 0
+	}, gotResponse.Posts)
+
+	if foundRemovedPostLike == false {
+		t.Errorf("Error: Post with id %v and removed like was not found", firstPost.ID)
+	}
+
+	// Dislike
+	addLikeResponse, loggedDislikeRequest, _ := prepareAddLikeRequest(like.Dislike, firstPost.ID, postgresRepository)
+	loggedDislikeRequest.Header.Set("Authorization", "Bearer "+loginResponseBody.Data.Token)
+	addLikeHandler(addLikeResponse, loggedDislikeRequest)
+
+	getAllResponse, getAllRequest, getAllHandler = prepareGetAllPostsRequest(postrepository.NewPostgresRepository(testDatabase))
+	getAllHandler(getAllResponse, getAllRequest)
+
+	json.NewDecoder(getAllResponse.Body).Decode(&gotResponse)
+
+	foundDislikePost := existPost(func(storedPost post.PostsDTO) bool {
+		return storedPost.ID == firstPost.ID && storedPost.Likes == 0 && storedPost.Dislikes == 1
+	}, gotResponse.Posts)
+
+	if foundDislikePost == false {
+		t.Errorf("Error: Post with id %v and disliked was not found", firstPost.ID)
+	}
+
+	// Like again, this should remove the last dislike and add a like
+	addLikeResponse, loggedLikeRequest, _ := prepareAddLikeRequest(like.TLike, firstPost.ID, postgresRepository)
+	loggedLikeRequest.Header.Set("Authorization", "Bearer "+loginResponseBody.Data.Token)
+	addLikeHandler(addLikeResponse, loggedLikeRequest)
+
+	getAllResponse, getAllRequest, getAllHandler = prepareGetAllPostsRequest(postrepository.NewPostgresRepository(testDatabase))
+	getAllHandler(getAllResponse, getAllRequest)
+	json.NewDecoder(getAllResponse.Body).Decode(&gotResponse)
+
+	foundLikedPost = existPost(func(storedPost post.PostsDTO) bool {
+		return storedPost.ID == firstPost.ID && storedPost.Likes == 1 && storedPost.Dislikes == 0
+	}, gotResponse.Posts)
+
+	if foundLikedPost == false {
+		t.Errorf("Error: Post with id %v and liked again was not found", firstPost.ID)
 	}
 }

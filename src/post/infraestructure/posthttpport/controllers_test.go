@@ -51,7 +51,7 @@ func TestUnitCreatePostControllerUnit(t *testing.T) {
 
 func TestUnitAddLikeControllerUnit(t *testing.T) {
 	t.Run("Should throw a bad request petition if type property is not sent properly", func(t *testing.T) {
-		response, request, controller := prepareAddLikeRequest("invalid-type")
+		response, request, controller := prepareAddLikeRequest("invalid-type", "123", mockPostRepositoryOK{})
 		controller.AddPostLikeController(response, request)
 
 		if response.Code != http.StatusBadRequest {
@@ -60,7 +60,7 @@ func TestUnitAddLikeControllerUnit(t *testing.T) {
 	})
 
 	t.Run("Should return a created status code if type is sent properly", func(t *testing.T) {
-		response, request, controller := prepareAddLikeRequest(like.TLike)
+		response, request, controller := prepareAddLikeRequest(like.TLike, "123", mockPostRepositoryOK{})
 		controller.AddPostLikeController(response, request)
 
 		if response.Code != http.StatusCreated {
