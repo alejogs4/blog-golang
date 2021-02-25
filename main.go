@@ -23,7 +23,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = token.LoadCertificates(1, "certificates/app.rsa.pub")
+	err = token.LoadCertificates("certificates/app.rsa", "certificates/app.rsa.pub")
 	if err != nil {
 		log.Fatal(err)
 	}
