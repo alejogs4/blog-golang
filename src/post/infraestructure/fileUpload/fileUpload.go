@@ -52,7 +52,7 @@ func UploadFile(formField, folder string) middleware.Middleware {
 			}
 
 			// Look for what else I can use here
-			newContext := context.WithValue(request.Context(), "file", filePath)
+			newContext := context.WithValue(request.Context(), "file", filePath) //nolint
 			f(response, request.WithContext(newContext))
 		}
 	}

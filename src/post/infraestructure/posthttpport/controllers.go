@@ -37,7 +37,7 @@ func (controller PostControllers) CreatePostController(response http.ResponseWri
 	}
 	httpBlogPost.Tags = postTags
 
-	userDTO, _ := request.Context().Value("user").(user.UserDTO)
+	userDTO, _ := request.Context().Value("user").(user.UserDTO) //nolint
 	userPicture, _ := request.Context().Value("file").(string)
 
 	err := controller.postCommands.CreateNewPost(userDTO.ID, httpBlogPost.Title, httpBlogPost.Content, userPicture, httpBlogPost.Tags)

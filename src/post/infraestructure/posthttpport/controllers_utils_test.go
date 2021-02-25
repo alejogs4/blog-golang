@@ -36,7 +36,7 @@ func preparePostRequest(title, content, tags string, postRespository post.PostRe
 
 	rawUser, _ := user.NewUser("id", "Alejandro", "garcia", "alejogs4@gmail.com", "1234567", true)
 	userDTO := user.ToDTO(rawUser)
-	ctx := context.WithValue(request.Context(), "user", userDTO)
+	ctx := context.WithValue(request.Context(), "user", userDTO) //nolint
 	ctx = context.WithValue(ctx, "file", "/path/image.jpg")
 
 	return response, request.WithContext(ctx), controller
@@ -53,7 +53,7 @@ func prepareAddLikeRequest(sentType, postID string, postRespository post.PostRep
 
 	rawUser, _ := user.NewUser("id", "Alejandro", "garcia", "alejogs4@gmail.com", "1234567", true)
 	userDTO := user.ToDTO(rawUser)
-	ctx := context.WithValue(withPostIDRequest.Context(), "user", userDTO)
+	ctx := context.WithValue(withPostIDRequest.Context(), "user", userDTO) //nolint
 
 	// Here I just noticed that even though I will only use a command I need to pass it a query use case instance, so this could be refactored
 	var postCommands application.PostCommands = application.NewPostCommands(postRespository)

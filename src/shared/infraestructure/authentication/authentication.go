@@ -41,7 +41,7 @@ func LoginMiddleare() middleware.Middleware {
 			}
 
 			// Look for what else I can use here
-			newContext := context.WithValue(request.Context(), "user", user)
+			newContext := context.WithValue(request.Context(), "user", user) // nolint
 			f(response, request.WithContext(newContext))
 		}
 	}
