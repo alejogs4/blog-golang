@@ -16,7 +16,7 @@ services:
       dockerfile: ./docker/test/Dockerfile.test
     image: go-blog-test
     volumes:
-      - .:/go/src/blog
+      - .:/go/src/go-blog
     networks:
       - integration-test-network
     env_file: .env

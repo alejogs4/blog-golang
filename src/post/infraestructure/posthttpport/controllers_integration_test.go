@@ -63,7 +63,7 @@ func TestPostGetAllIntegration(t *testing.T) {
 	}
 
 	var postsInDB struct {
-		Posts []post.Post `json:"data"`
+		Posts []post.PostsDTO `json:"data"`
 	}
 	json.NewDecoder(response.Body).Decode(&postsInDB)
 
