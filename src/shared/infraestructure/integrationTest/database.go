@@ -18,14 +18,10 @@ import (
 func PopulateUsers(db *sql.DB) ([]user.User, error) {
 	newUserOne, _ := user.NewUser(uuid.New().String(), "Alejandro", "Garcia", fake.EmailAddress(), "1234567", true)
 	newUserTwo, _ := user.NewUser(uuid.New().String(), "Jose", "Miranda", fake.EmailAddress(), "1234675", true)
-	newUserThree, _ := user.NewUser(uuid.New().String(), "Miguel", "Velez", fake.EmailAddress(), "1234567", true)
-	newUserFour, _ := user.NewUser(uuid.New().String(), "Mauricio", "Brunal Mestra", fake.EmailAddress(), "123457s", true)
 
 	users := []user.User{
 		newUserOne,
 		newUserTwo,
-		newUserThree,
-		newUserFour,
 	}
 
 	for _, currentUser := range users {

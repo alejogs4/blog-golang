@@ -27,17 +27,3 @@ func prepareRegisterRequest(newUser user.User) (*http.Request, *httptest.Respons
 	registerRoute := middleware.Chain(userController.RegisterHandler, httputils.Verb(http.MethodPost))
 	return request, response, registerRoute
 }
-
-func prepareLoginRequest(email, password string) (*http.Request, *httptest.ResponseRecorder, http.HandlerFunc) {
-	userController := userhttpport.NewUserController(userrepository.NewUserRepository(testDatabase))
-	loginBody := []byte(fmt.Sprintf(
-		`{"email": "%v", "password": "%v"}`,
-		email, password,
-	))
-
-	loginRequest := httptest.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewBuffer(loginBody))
-	loginResponse := httptest.NewRecorder()
-	loginRoute := middleware.Chain(userController.LoginHandler, httputils.Verb(http.MethodPost))
-
-	return loginRequest, loginResponse, loginRoute
-}

@@ -54,7 +54,7 @@ func TestRegisterLoginIntegration(t *testing.T) {
 			t.Errorf("Error: Expected user email %v, Received user email %v", newUser.GetEmail(), receivedResponse.Data.Email)
 		}
 
-		loginRequest, loginResponse, loginRoute := prepareLoginRequest(newUser.GetEmail(), newUser.GetPassword())
+		loginRequest, loginResponse, loginRoute := integrationtest.PrepareLoginRequest(newUser.GetEmail(), newUser.GetPassword(), testDatabase)
 		loginRoute(loginResponse, loginRequest)
 
 		if loginResponse.Code != http.StatusOK {
@@ -88,14 +88,14 @@ func TestRegisterLoginIntegration(t *testing.T) {
 			t.Errorf("Error: Expected status %d, Received status %d", http.StatusCreated, response.Code)
 		}
 
-		loginRequest, loginResponse, loginRoute := prepareLoginRequest("wrong-email@gmail.com", newUser.GetPassword())
+		loginRequest, loginResponse, loginRoute := integrationtest.PrepareLoginRequest("wrong-email@gmail.com", newUser.GetPassword(), testDatabase)
 		loginRoute(loginResponse, loginRequest)
 
 		if loginResponse.Code != http.StatusBadRequest {
 			t.Errorf("Error: Expected status %d, Received status %d", http.StatusBadRequest, loginResponse.Code)
 		}
 
-		loginRequest, loginResponse, loginRoute = prepareLoginRequest(newUser.GetEmail(), "wrong-password")
+		loginRequest, loginResponse, loginRoute = integrationtest.PrepareLoginRequest(newUser.GetEmail(), "wrong-password", testDatabase)
 		loginRoute(loginResponse, loginRequest)
 
 		if loginResponse.Code != http.StatusBadRequest {
