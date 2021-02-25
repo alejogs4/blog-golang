@@ -8,4 +8,4 @@ WORKDIR /go/src/go-blog
 COPY . .
 
 # Execute tests
-CMD CGO_ENABLED=0 go test -run Integration ./...
+CMD CGO_ENABLED=0 go test ./... -coverprofile coverage.out && go tool cover -html=coverage.out -o coverage.html

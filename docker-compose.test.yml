@@ -14,7 +14,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/test/Dockerfile.test
-    image: go-blog-test:1.0
+    image: go-blog-test
     volumes:
       - .:/go/src/blog
     networks:
