@@ -26,9 +26,9 @@ services:
       - database
     ports: 
       - 8080:8080
-networks: 
-  integration-test-network:
-    driver: bridge
 volumes:
   integration-test-data:
     driver: local
+networks: 
+  integration-test-network:
+    driver: bridge
