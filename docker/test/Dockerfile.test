@@ -8,4 +8,4 @@ WORKDIR /go/src/go-blog
 COPY . .
 
 # Execute tests
-CMD CGO_ENABLED=0 go test ./... -coverprofile coverage.out && go tool cover -html=coverage.out -o coverage.html
+CMD CGO_ENABLED=0 go test ./... -coverprofile coverage.out && go tool cover -html=coverage.out -o coverage.html && go tool cover -func coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}'
