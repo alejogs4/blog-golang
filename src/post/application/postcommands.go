@@ -27,15 +27,19 @@ func (pc PostCommands) CreateNewPost(userID, title, content, picture string, tag
 }
 
 // CreateNewComment add new comment to a certain blog post validating comment content
-func (pc PostCommands) CreateNewComment(userID, postID, content string) error {
+func (pc PostCommands) CreateNewComment(userID, postID, content string) (string, error) {
 	commentUUID := uuid.New().String()
 
 	newComment, error := post.CreateNewComment(commentUUID, postID, userID, content)
 	if error != nil {
-		return error
+		return "", error
 	}
 
-	return pc.postRepository.AddComment(newComment)
+	if err := pc.postRepository.AddComment(newComment); err != nil {
+		return "", err
+	}
+
+	return commentUUID, nil
 }
 
 // RemovePostComment remove comment by its id validating if comment owner is the one removing it

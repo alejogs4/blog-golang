@@ -36,7 +36,7 @@ func TestPostCommandsCreateNewPostUnit(t *testing.T) {
 func TestPostCommandsCreateNewCommentUnit(t *testing.T) {
 	postCommands := application.NewPostCommands(postRepositoryMock{})
 	t.Run("Should return ErrBadCommentContent if not all fields were provided", func(t *testing.T) {
-		err := postCommands.CreateNewComment("  ", " ", "content")
+		_, err := postCommands.CreateNewComment("  ", " ", "content")
 
 		if err == nil {
 			t.Errorf("Error: expected error %v, received nil", post.ErrBadCommentContent)
@@ -48,7 +48,7 @@ func TestPostCommandsCreateNewCommentUnit(t *testing.T) {
 	})
 
 	t.Run("Should return nil if all fields are provided", func(t *testing.T) {
-		err := postCommands.CreateNewComment("user-id", "post-id", "content")
+		_, err := postCommands.CreateNewComment("user-id", "post-id", "content")
 
 		if err != nil {
 			t.Errorf("Error: expected error nil, received  %v", err)

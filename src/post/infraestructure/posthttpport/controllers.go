@@ -50,6 +50,32 @@ func (controller PostControllers) CreatePostController(response http.ResponseWri
 	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(map[string]string{}, "Post created"), http.StatusCreated)
 }
 
+func (controller PostControllers) AddPostComment(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+
+	var commentInfo struct {
+		Content string `json:"content"`
+	}
+	postID := mux.Vars(request)["id"]
+	userDTO, _ := request.Context().Value("user").(user.UserDTO)
+
+	if err := json.NewDecoder(request.Body).Decode(&commentInfo); err != nil {
+		httpError := posthttpadapter.MapPostErrorToHttpError(err)
+		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
+		return
+	}
+
+	commentID, err := controller.postCommands.CreateNewComment(userDTO.ID, postID, commentInfo.Content)
+	if err != nil {
+		httpError := posthttpadapter.MapPostErrorToHttpError(err)
+		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
+		return
+	}
+
+	createdComment := map[string]string{"comment_id": commentID}
+	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(createdComment, "Comment created"), http.StatusCreated)
+}
+
 func (controller PostControllers) AddPostLikeController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	var likeInfo struct {

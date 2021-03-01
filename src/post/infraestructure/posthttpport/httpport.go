@@ -21,6 +21,18 @@ func HandlePostHttpRoutes(router *mux.Router, postCommands application.PostComma
 		fileupload.UploadFile("picture", "images"),
 	))
 
+	router.HandleFunc("/api/v1/post/{id}/comment", middleware.Chain(
+		postController.AddPostComment,
+		httputils.Verb(http.MethodPost),
+		authentication.LoginMiddleare(),
+	))
+
+	router.HandleFunc("/api/v1/post/{id}/like", middleware.Chain(
+		postController.AddPostLikeController,
+		httputils.Verb(http.MethodPost),
+		authentication.LoginMiddleare(),
+	))
+
 	router.HandleFunc("/api/v1/post/{id}", middleware.Chain(
 		postController.GetPostByIDController,
 		httputils.Verb(http.MethodGet),
@@ -31,9 +43,4 @@ func HandlePostHttpRoutes(router *mux.Router, postCommands application.PostComma
 		httputils.Verb(http.MethodGet),
 	))
 
-	router.HandleFunc("/api/v1/post/{id}/like", middleware.Chain(
-		postController.AddPostLikeController,
-		httputils.Verb(http.MethodPost),
-		authentication.LoginMiddleare(),
-	))
 }
