@@ -1,6 +1,7 @@
 package posthttpport_test
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/alejogs4/blog/src/post/domain/like"
 	"github.com/alejogs4/blog/src/post/domain/post"
 	"github.com/alejogs4/blog/src/post/infraestructure/posthttpport"
+	posthttppost "github.com/alejogs4/blog/src/post/infraestructure/posthttpport"
 	"github.com/alejogs4/blog/src/post/infraestructure/postrepository"
 	"github.com/alejogs4/blog/src/shared/infraestructure/authentication"
 	"github.com/alejogs4/blog/src/shared/infraestructure/database"
@@ -309,5 +311,113 @@ func TestAddLikeIntegration(t *testing.T) {
 
 	if foundLikedPost == false {
 		t.Errorf("Error: Post with id %v and liked again was not found", firstPost.ID)
+	}
+}
+
+func TestAddRemoveCommentIntegration(t *testing.T) {
+	t.Parallel()
+
+	users, err := integrationtest.PopulateUsers(testDatabase)
+	if err != nil {
+		t.Errorf("Error: error populating users %s", err)
+	}
+
+	posts, err := integrationtest.PopulatePosts(users, testDatabase)
+	if err != nil {
+		t.Errorf("Error: error populating posts %s", err)
+	}
+
+	loggedUser := users[0]
+	loginRequest, loginResponse, loginController := integrationtest.PrepareLoginRequest(
+		loggedUser.GetEmail(),
+		loggedUser.GetPassword(),
+		testDatabase,
+	)
+
+	loginController(loginResponse, loginRequest)
+	if loginResponse.Code != http.StatusOK {
+		t.Errorf("Error: expected status code %d, received status code %d", http.StatusOK, loginResponse.Code)
+	}
+
+	var loginInformation struct {
+		Data userhttpport.LoginResponse `json:"data"`
+	}
+	json.NewDecoder(loginResponse.Body).Decode(&loginInformation)
+
+	usedPost := posts[0]
+	commentContent := []byte(fmt.Sprintf(`{"content": "%v"}`, fake.ParagraphsN(1)))
+
+	addCommentRequest := httptest.NewRequest(http.MethodPost, "/api/v1/post/{id}/comment", bytes.NewBuffer(commentContent))
+	addCommentResponse := httptest.NewRecorder()
+
+	addCommentRequest.Header.Set("Authorization", "Bearer "+loginInformation.Data.Token)
+	withPostIDRequest := mux.SetURLVars(addCommentRequest, map[string]string{"id": usedPost.ID})
+
+	postgresRepository := postrepository.NewPostgresRepository(testDatabase)
+	postCommands := application.NewPostCommands(postgresRepository)
+	postQueries := application.NewPostQueries(postgresRepository)
+
+	addPostCommentController := posthttppost.NewPostControllers(postCommands, postQueries).AddPostComment
+
+	addPostCommentRoute := middleware.Chain(
+		addPostCommentController,
+		httputils.Verb(http.MethodPost),
+		authentication.LoginMiddleare(),
+	)
+
+	addPostCommentRoute(addCommentResponse, withPostIDRequest)
+	if addCommentResponse.Code != http.StatusCreated {
+		t.Errorf("Error: expected status code %d, received status code %d", http.StatusCreated, addCommentResponse.Code)
+	}
+
+	var commentID struct {
+		Data struct {
+			CommentID string `json:"comment_id"`
+		} `json:"data"`
+	}
+	json.NewDecoder(addCommentResponse.Body).Decode(&commentID)
+
+	var gotPostsResponse struct {
+		Posts []post.PostsDTO `json:"data"`
+	}
+	getAllResponse, getAllRequest, getAllHandler := prepareGetAllPostsRequest(postrepository.NewPostgresRepository(testDatabase))
+	getAllHandler(getAllResponse, getAllRequest)
+	json.NewDecoder(getAllResponse.Body).Decode(&gotPostsResponse)
+
+	oneCommentPost := existPost(func(storedPost post.PostsDTO) bool {
+		return storedPost.CommentsCount == 1 && storedPost.ID == usedPost.ID
+	}, gotPostsResponse.Posts)
+
+	if !oneCommentPost {
+		t.Errorf("Error: Post with ID %v should have one comment", usedPost.ID)
+	}
+
+	removeCommentRequest := httptest.NewRequest(http.MethodDelete, "/api/v1/comment/{id}", nil)
+	removeCommentResponse := httptest.NewRecorder()
+	removeCommentRequest.Header.Set("Authorization", "Bearer "+loginInformation.Data.Token)
+	withPostIDRequest = mux.SetURLVars(removeCommentRequest, map[string]string{"id": commentID.Data.CommentID})
+
+	removeCommentController := posthttppost.NewPostControllers(postCommands, postQueries).RemoveComment
+	removeCommentRoute := middleware.Chain(
+		removeCommentController,
+		httputils.Verb(http.MethodDelete),
+		authentication.LoginMiddleare(),
+	)
+
+	removeCommentRoute(removeCommentResponse, withPostIDRequest)
+	if removeCommentResponse.Code != http.StatusOK {
+		t.Errorf("Error: expected status code %d, received status code %d", http.StatusOK, removeCommentResponse.Code)
+	}
+
+	getAllResponse, getAllRequest, getAllHandler = prepareGetAllPostsRequest(postrepository.NewPostgresRepository(testDatabase))
+	getAllHandler(getAllResponse, getAllRequest)
+	json.NewDecoder(getAllResponse.Body).Decode(&gotPostsResponse)
+
+	noCommentPost := existPost(func(storedPost post.PostsDTO) bool {
+		return storedPost.CommentsCount == 0 && storedPost.ID == usedPost.ID
+	}, gotPostsResponse.Posts)
+
+	if !noCommentPost {
+		t.Errorf("Error: Post with ID %v should have no comment", usedPost.ID)
 	}
 }
