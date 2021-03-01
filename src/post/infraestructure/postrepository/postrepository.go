@@ -182,7 +182,7 @@ func (postgres PostgresRepository) getPostComments(postID string) ([]post.Commen
 	var comments []post.Comment = []post.Comment{}
 
 	rows, err := postgres.db.Query(
-		"SELECT id, content, person_id, post_id, state FROM comment c WHERE post_id=$1", postID,
+		"SELECT id, content, person_id, post_id, state FROM comment WHERE post_id=$1 AND state != $2", postID, post.RemovedComment,
 	)
 	if err != nil {
 		return nil, err

@@ -27,6 +27,12 @@ func HandlePostHttpRoutes(router *mux.Router, postCommands application.PostComma
 		authentication.LoginMiddleare(),
 	))
 
+	router.HandleFunc("/api/v1/comment/{id}", middleware.Chain(
+		postController.RemoveComment,
+		httputils.Verb(http.MethodDelete),
+		authentication.LoginMiddleare(),
+	))
+
 	router.HandleFunc("/api/v1/post/{id}/like", middleware.Chain(
 		postController.AddPostLikeController,
 		httputils.Verb(http.MethodPost),

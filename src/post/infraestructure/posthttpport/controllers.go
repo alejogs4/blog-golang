@@ -76,6 +76,22 @@ func (controller PostControllers) AddPostComment(response http.ResponseWriter, r
 	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(createdComment, "Comment created"), http.StatusCreated)
 }
 
+func (controller PostControllers) RemoveComment(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+
+	commentID := mux.Vars(request)["id"]
+	userDTO, _ := request.Context().Value("user").(user.UserDTO)
+
+	err := controller.postCommands.RemovePostComment(commentID, userDTO.ID)
+	if err != nil {
+		httpError := posthttpadapter.MapPostErrorToHttpError(err)
+		httputils.DispatchNewHttpError(response, httpError.Message, httpError.Status)
+		return
+	}
+
+	httputils.DispatchNewResponse(response, httputils.WrapAPIResponse(map[string]string{}, "Comment removed"), http.StatusOK)
+}
+
 func (controller PostControllers) AddPostLikeController(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	var likeInfo struct {
